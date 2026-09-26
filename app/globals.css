@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: var(--font-sans), "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-handwriting: var(--font-handwriting), "Caveat", cursive;
+}
+
 :root {
-  --background: #F7F7F7;
-  --darkgreen: #0f766e;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #FFFFFF;
-    --foreground: #ededed;
-  }
+  --background: #FFFFFF;
+  --foreground: #0F172A;
+  --emerald-primary: #00A66C;
+  --emerald-dark: #008757;
 }
 
 body {
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
 }
+
+.font-handwriting {
+  font-family: var(--font-handwriting);
+}
+
