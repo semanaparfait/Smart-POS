@@ -1,14 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-sans), "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-handwriting: var(--font-handwriting), "Caveat", cursive;
+  --font-sans:
+    var(--font-jakarta), "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont,
+    sans-serif;
+  --font-handwriting: var(--font-caveat), "Caveat", cursive;
 }
 
 :root {
-  --background: #FFFFFF;
-  --foreground: #0F172A;
-  --emerald-primary: #00A66C;
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --emerald-primary: #00a66c;
   --emerald-dark: #008757;
 }
 
@@ -22,4 +24,3 @@ body {
 .font-handwriting {
   font-family: var(--font-handwriting);
 }
-
