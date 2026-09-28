@@ -63,6 +63,14 @@ const stats = [
   },
 ];
 
+const devices: [string, string, string, boolean][] = [
+  ["POS-001", "Lex Hotel", "Downtown", true],
+  ["POS-002", "Pearl Shop", "Kimihurura", true],
+  ["POS-003", "Kigali Bar", "Kacyiru", false],
+  ["POS-004", "Royal Restaurant", "Nyamirambo", true],
+  ["POS-005", "Sky Lounge", "Remera", true],
+];
+
 const installationRequests = [
   ["Lex Corp Hotel", "New Installation", "Pending", "Apr 29, 2026"],
   ["Pearl Shop", "Device Setup", "Review", "Apr 28, 2026"],
@@ -82,7 +90,6 @@ const recentTransactions = [
 export default function Page() {
   return (
     <div className="space-y-6">
-
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
@@ -109,15 +116,10 @@ export default function Page() {
                   <Icon className="text-green-600" size={20} />
                 </div>
 
-                <ArrowUpRight
-                  size={17}
-                  className="text-gray-400"
-                />
+                <ArrowUpRight size={17} className="text-gray-400" />
               </div>
 
-              <p className="mt-4 text-sm text-gray-500">
-                {stat.title}
-              </p>
+              <p className="mt-4 text-sm text-gray-500">{stat.title}</p>
 
               <h2 className="mt-1 text-2xl font-bold text-gray-900">
                 {stat.value}
@@ -140,9 +142,7 @@ export default function Page() {
                   {stat.change}
                 </span>
 
-                <span className="text-gray-400">
-                  {stat.description}
-                </span>
+                <span className="text-gray-400">{stat.description}</span>
               </div>
             </div>
           );
@@ -151,18 +151,13 @@ export default function Page() {
 
       {/* Revenue + Platform Status */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-
         {/* Revenue */}
         <div className="xl:col-span-2 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold text-gray-900">
-                Revenue Overview
-              </h2>
+              <h2 className="font-semibold text-gray-900">Revenue Overview</h2>
 
-              <p className="text-sm text-gray-500">
-                Total platform revenue
-              </p>
+              <p className="text-sm text-gray-500">Total platform revenue</p>
             </div>
 
             <select className="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none">
@@ -184,9 +179,7 @@ export default function Page() {
                   style={{ height: `${height}%` }}
                 />
 
-                <span className="text-xs text-gray-400">
-                  Apr {23 + index}
-                </span>
+                <span className="text-xs text-gray-400">Apr {23 + index}</span>
               </div>
             ))}
           </div>
@@ -196,19 +189,14 @@ export default function Page() {
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold text-gray-900">
-                Platform Status
-              </h2>
+              <h2 className="font-semibold text-gray-900">Platform Status</h2>
 
               <p className="mt-1 text-xs text-green-600">
                 ● All systems operational
               </p>
             </div>
 
-            <CheckCircle2
-              className="text-green-500"
-              size={22}
-            />
+            <CheckCircle2 className="text-green-500" size={22} />
           </div>
 
           <div className="mt-6 space-y-4">
@@ -223,9 +211,7 @@ export default function Page() {
                 key={service}
                 className="flex items-center justify-between border-b border-gray-100 pb-3"
               >
-                <span className="text-sm text-gray-600">
-                  {service}
-                </span>
+                <span className="text-sm text-gray-600">{service}</span>
 
                 <span className="flex items-center gap-2 text-xs font-medium text-green-600">
                   <span className="h-2 w-2 rounded-full bg-green-500" />
@@ -239,7 +225,6 @@ export default function Page() {
 
       {/* Requests + Device Health */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-
         {/* Installation Requests */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-gray-100 p-5">
@@ -271,17 +256,12 @@ export default function Page() {
 
               <tbody>
                 {installationRequests.map((request) => (
-                  <tr
-                    key={request[0]}
-                    className="border-t border-gray-100"
-                  >
+                  <tr key={request[0]} className="border-t border-gray-100">
                     <td className="px-5 py-4 font-medium text-gray-800">
                       {request[0]}
                     </td>
 
-                    <td className="px-5 py-4 text-gray-500">
-                      {request[1]}
-                    </td>
+                    <td className="px-5 py-4 text-gray-500">{request[1]}</td>
 
                     <td className="px-5 py-4">
                       <span className="rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-600">
@@ -289,9 +269,7 @@ export default function Page() {
                       </span>
                     </td>
 
-                    <td className="px-5 py-4 text-gray-500">
-                      {request[3]}
-                    </td>
+                    <td className="px-5 py-4 text-gray-500">{request[3]}</td>
                   </tr>
                 ))}
               </tbody>
@@ -303,13 +281,9 @@ export default function Page() {
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-gray-100 p-5">
             <div>
-              <h2 className="font-semibold text-gray-900">
-                POS Device Health
-              </h2>
+              <h2 className="font-semibold text-gray-900">POS Device Health</h2>
 
-              <p className="text-sm text-gray-500">
-                Current device status
-              </p>
+              <p className="text-sm text-gray-500">Current device status</p>
             </div>
 
             <button className="text-sm font-medium text-green-600">
@@ -318,55 +292,44 @@ export default function Page() {
           </div>
 
           <div className="divide-y divide-gray-100">
-            {[
-              ["POS-001", "Lex Hotel", "Downtown", true],
-              ["POS-002", "Pearl Shop", "Kimihurura", true],
-              ["POS-003", "Kigali Bar", "Kacyiru", false],
-              ["POS-004", "Royal Restaurant", "Nyamirambo", true],
-              ["POS-005", "Sky Lounge", "Remera", true],
-            ].map(([device, business, branch, online]) => (
-              <div
-                key={String(device)}
-                className="grid grid-cols-4 items-center px-5 py-4 text-sm"
-              >
-                <span className="font-medium text-gray-800">
-                  {device}
-                </span>
-
-                <span className="text-gray-500">
-                  {business}
-                </span>
-
-                <span className="text-gray-500">
-                  {branch}
-                </span>
-
-                <span
-                  className={
-                    online
-                      ? "flex items-center gap-2 text-xs font-medium text-green-600"
-                      : "flex items-center gap-2 text-xs font-medium text-red-500"
-                  }
+            {devices.map(([device, business, branch, online]) => {
+              return (
+                <div
+                  key={device}
+                  className="grid grid-cols-4 items-center px-5 py-4 text-sm"
                 >
+                  <span className="font-medium text-gray-800">{device}</span>
+
+                  <span className="text-gray-500">{business}</span>
+
+                  <span className="text-gray-500">{branch}</span>
+
                   <span
                     className={
                       online
-                        ? "h-2 w-2 rounded-full bg-green-500"
-                        : "h-2 w-2 rounded-full bg-red-500"
+                        ? "flex items-center gap-2 text-xs font-medium text-green-600"
+                        : "flex items-center gap-2 text-xs font-medium text-red-500"
                     }
-                  />
+                  >
+                    <span
+                      className={
+                        online
+                          ? "h-2 w-2 rounded-full bg-green-500"
+                          : "h-2 w-2 rounded-full bg-red-500"
+                      }
+                    />
 
-                  {online ? "Online" : "Offline"}
-                </span>
-              </div>
-            ))}
+                    {online ? "Online" : "Offline"}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
 
       {/* Transactions + Quick Activity */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-
         {/* Transactions */}
         <div className="xl:col-span-2 rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-gray-100 p-5">
@@ -435,9 +398,7 @@ export default function Page() {
         {/* Recent Activity */}
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">
-              Recent Activity
-            </h2>
+            <h2 className="font-semibold text-gray-900">Recent Activity</h2>
 
             <button className="text-sm font-medium text-green-600">
               View all
@@ -456,13 +417,9 @@ export default function Page() {
                 <div className="mt-1 h-2.5 w-2.5 rounded-full bg-green-500" />
 
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-800">
-                    {title}
-                  </p>
+                  <p className="text-sm font-medium text-gray-800">{title}</p>
 
-                  <p className="text-xs text-gray-500">
-                    {detail}
-                  </p>
+                  <p className="text-xs text-gray-500">{detail}</p>
                 </div>
 
                 <span className="whitespace-nowrap text-[11px] text-gray-400">
