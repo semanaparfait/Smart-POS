@@ -47,6 +47,7 @@ const useCompanyStore = create<{
 
     set({ companies: Array.isArray(companiesArray) ? companiesArray : [] });
   },
+  
 
   addCompany: async (company: CompanyTypePayload) => {
     if (!API_URL) throw new Error("API_URL is not defined");
@@ -112,6 +113,31 @@ const useCompanyStore = create<{
 
     set({ companies: get().companies.filter((c) => c.id !== id) });
   },
+
+  fetchSingleCompany: async (id: string) => {
+    if (!API_URL) throw new Error("API_URL is not defined");
+
+    const token = getAuthToken();
+    if (!token) {
+      console.warn("No access token found. Postponing fetchSingleCompany.");
+      return null;
+    }
+
+    const response = await fetch(`${API_URL}/api/v1/companies/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch single company: ${response.statusText}`);
+    }
+
+    const resData = await response.json();
+    return resData.data ?? resData;
+  }
 }));
 
 export default useCompanyStore;
