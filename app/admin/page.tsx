@@ -68,7 +68,7 @@ const devices: [string, string, string, boolean][] = [
   ["POS-002", "Pearl Shop", "Kimihurura", true],
   ["POS-003", "Kigali Bar", "Kacyiru", false],
   ["POS-004", "Royal Restaurant", "Nyamirambo", true],
-  ["POS-005", "Sky Lounge", "Remera", true],
+  ["POS-005", "Sky Lounge", "Remeraa", true],
 ];
 
 const installationRequests = [
