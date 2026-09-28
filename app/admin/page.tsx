@@ -326,7 +326,7 @@ export default function Page() {
               ["POS-005", "Sky Lounge", "Remera", true],
             ].map(([device, business, branch, online]) => (
               <div
-                key={device}
+                key={String(device)}
                 className="grid grid-cols-4 items-center px-5 py-4 text-sm"
               >
                 <span className="font-medium text-gray-800">
