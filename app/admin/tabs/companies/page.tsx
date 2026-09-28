@@ -1,246 +1,201 @@
 "use client";
-import React from "react";
+
+import React, { useMemo, useState, useEffect } from "react";
 import useCompaniesStore from "@/stores/companies/companystore";
 import {
   BadgeCheck,
   Building2,
   TriangleAlert,
   Clock9,
-  MapPin,
-  Hotel,
-  Wine,
-  Utensils,
-  Coffee,
-  ShoppingBag,
+  Search,
+  Plus,
+  ListFilter,
+  ArrowLeft,
 } from "lucide-react";
+import FetchCompany from "@/app/admin/tabs/companies/components/FetchCompany";
+import AddCompany from "@/app/admin/tabs/companies/components/AddCompany";
+
+const FilterableFetchCompany = FetchCompany as React.ComponentType<{
+  search: string;
+  status: string;
+  industry: string;
+}>;
 
 export default function CompaniesPage() {
-  const companies = useCompaniesStore((state) => state.companies);
+  const [activeView, setActiveView] = useState<"companies" | "add">("companies");
+        const [searchQuery, setSearchQuery] = useState("");
+        const [statusFilter, setStatusFilter] = useState("");
+        const [industryFilter, setIndustryFilter] = useState("");
+
+  const companies = useCompaniesStore((state) => state.companies) || [];
   const fetchCompanies = useCompaniesStore((state) => state.fetchCompanies);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchCompanies();
   }, [fetchCompanies]);
-  console.log("Companies:", companies);
-  const counts = [
-    {
-      icon: Building2,
-      name: "Total Companies",
-      count: 10,
-      color: "text-green-500",
-    },
-    {
-      icon: BadgeCheck,
-      name: "Active Companies",
-      count: 8,
-      color: "text-blue-500",
-    },
-    {
-      icon: Clock9,
-      name: "Pending Companies",
-      count: 2,
-      color: "text-yellow-500",
-    },
-    {
-      icon: TriangleAlert,
-      name: "Inactive Companies",
-      count: 2,
-      color: "text-red-500",
-    },
-  ];
-  return (
-    <main>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Companies</h1>
 
+  // Dynamic status counts derived from store
+  const stats = useMemo(() => {
+    const total = companies.length;
+    const active = companies.filter(
+      (c: any) => c.status?.toLowerCase() === "active"
+    ).length;
+    const pending = companies.filter(
+      (c: any) => c.status?.toLowerCase() === "pending"
+    ).length;
+    const inactive = companies.filter(
+      (c: any) => c.status?.toLowerCase() === "inactive"
+    ).length;
+
+    return [
+      {
+        name: "Total Companies",
+        count: total,
+        icon: Building2,
+        color: "text-emerald-600 bg-emerald-50",
+      },
+      {
+        name: "Active Companies",
+        count: active,
+        icon: BadgeCheck,
+        color: "text-blue-600 bg-blue-50",
+      },
+      {
+        name: "Pending Companies",
+        count: pending,
+        icon: Clock9,
+        color: "text-amber-600 bg-amber-50",
+      },
+      {
+        name: "Inactive Companies",
+        count: inactive,
+        icon: TriangleAlert,
+        color: "text-rose-600 bg-rose-50",
+      },
+    ];
+  }, [companies]);
+
+  return (
+    <main className="space-y-6">
+      {/* Header & View Switcher */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-5">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+            {activeView === "companies" ? "Companies" : "Register Company"}
+          </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage all businesses using the SmartPOS platform.
+            {activeView === "companies"
+              ? "Manage all registered businesses and store configurations on SmartPOS."
+              : "Add a new merchant or business location to the platform."}
           </p>
         </div>
 
-        <button className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700">
-          + Add Company
-        </button>
-      </div>
-
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {counts.map((item) => (
-          <div
-            key={item.name}
-            className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6"
-          >
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-gray-100 p-3 rounded-full">
-                {item.icon && <item.icon className={`h-6 w-6 ${item.color}`} />}
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-700 whitespace-nowrap truncate">
-                  {item.name}
-                </p>
-                <p className="text-2xl font-bold text-gray-900">{item.count}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <input
-          type="text"
-          placeholder="Search companies..."
-          className="block w-1/2 rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 outline-none ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-900 sm:text-sm sm:leading-6"
-        />
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <select className="block w-full rounded-md border-0 py-1.5  text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm sm:leading-6">
-            <option value="">All statuses</option>
-            <option value="active">Active</option>
-            <option value="pending">Pending</option>
-            <option value="inactive">Inactive</option>
-          </select>
-
-          <select className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm sm:leading-6">
-            <option value="">All Industries</option>
-            <option value="hotel">Hotel</option>
-            <option value="bar">Bar</option>
-            <option value="retail">Retail</option>
-            <option value="restaurant">Restaurant</option>
-            <option value="cafe">Cafe</option>
-            <option value="supermarket">Supermarket</option>
-          </select>
+        <div className="flex items-center gap-2">
+          {activeView === "add" ? (
+            <button
+              type="button"
+              onClick={() => setActiveView("companies")}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-xs hover:bg-gray-50 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to List
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setActiveView("add")}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-emerald-700 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Add Company
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="mt-6">
-        <p className="text-sm text-gray-500">
-          Showing <span className="font-medium">1</span> to{" "}
-          <span className="font-medium">10</span> of{" "}
-          <span className="font-medium">100</span> results
-        </p>
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {companies.map((company, index) => (
-            <div
-              key={company.id}
-              className="mt-4 rounded-lg bg-white px-4 py-5 shadow sm:p-6  "
-            >
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {company.logo === null || company.logo === undefined ? (
-                      <img
-                        src={company.logo}
-                        alt={company.name}
-                        className="h-12 w-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-12 w-12 items-center justify-between justify-center rounded-full bg-green-100 text-lg font-bold text-green-700 uppercase">
-                        {company.name ? company.name.charAt(0) : "C"}
-                      </div>
-                    )}
-
-                    <div>
-                      <h1 className="text-lg font-bold text-gray-900">
-                        {company.name}
-                      </h1>
-                      <p className="text-sm text-gray-500">
-                        COMP - {index + 1}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-green-500 bg-green-200 rounded-2xl px-2 py-1">
-                    Active
+      {activeView === "companies" ? (
+        <>
+          {/* Stat Cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {stats.map((item) => (
+              <div
+                key={item.name}
+                className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-xs transition hover:shadow-sm"
+              >
+                <div className={`rounded-xl p-3 ${item.color}`}>
+                  <item.icon className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
+                    {item.name}
+                  </p>
+                  <p className="text-2xl font-bold tracking-tight text-gray-900 mt-0.5">
+                    {item.count}
                   </p>
                 </div>
-
-                <div>
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex fl items-center gap-2">
-                        {(() => {
-                          if (company.type === "HOTEL") {
-                            return <Hotel className="h-4 w-4 text-blue-600" />;
-                          } else if (company.type === "BAR") {
-                            return <Wine className="h-4 w-4 text-yellow-600" />;
-                          } else if (company.type === "RESTAURANT") {
-                            return (
-                              <Utensils className="h-4 w-4 text-red-600" />
-                            );
-                          } else if (company.type === "CAFE") {
-                            return (
-                              <Coffee className="h-4 w-4 text-purple-600" />
-                            );
-                          } else if (company.type === "SUPERMARKET") {
-                            return (
-                              <ShoppingBag className="h-4 w-4 text-pink-600" />
-                            );
-                          }
-                        })()}
-                        <span className="ml-1 text-sm text-gray-500">
-                          {company.type}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-green-600" />
-                        <span className="ml-1 text-sm text-gray-500">
-                          {company.location}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <img
-                        src={(() => {
-                          if (company.type === "HOTEL") {
-                            return "/https://i.pinimg.com/736x/8b/12/3f/8b123f3ec3afe8b513d340a8bb7c090d.jpg";
-                          } else if (company.type === "BAR") {
-                            return "https://i.pinimg.com/1200x/9f/6b/71/9f6b7166720dec2afecb1c6b58a076b6.jpg";
-                          } else if (company.type === "RESTAURANT") {
-                            return "https://i.pinimg.com/736x/59/54/ad/5954ad7e10bec0c3153ae92ac71b47a3.jpg";
-                          } else if (company.type === "CAFE") {
-                            return "/images/caffe.png";
-                          } else if (company.type === "SUPERMARKET") {
-                            return "https://i.pinimg.com/1200x/de/21/03/de2103fe44c04157076ae9a17611a7d6.jpg";
-                          }
-                        })()}
-                        alt={company.name}
-                        className="h-16 w-16 object-cover rounded-lg"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mt-4">
-                    <div>
-                      <h1 className="font-bold">3</h1>
-                      <p className="text-sm text-gray-500">Brances</p>
-                    </div>
-                    <div>
-                      <h1 className="font-bold">12</h1>
-                      <p className="text-sm text-gray-500">Devices</p>
-                    </div>
-                    <div>
-                      <h1 className="font-bold">3</h1>
-                      <p className="text-sm text-gray-500"> Users</p>
-                    </div>
-                    <div>
-                      <h1 className="font-bold">RWF 50 M</h1>
-                      <p className="text-sm text-gray-500">Revenue(30d)</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 mt-4 w-full">
-                    <button className="w-1/2 rounded-lg border border-gray-300 px-3 py-1 text-sm font-semibold  transition ">
-                      Edit
-                    </button>
-                    <button className="w-1/2 rounded-lg bg-green-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-green-700">
-                      View Details
-                    </button>
-                  </div>
-                </div>
               </div>
+            ))}
+          </div>
+
+          {/* Controls: Search & Filters */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white p-4 rounded-xl border border-gray-100 shadow-xs">
+            <div className="relative w-full sm:max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by company name, email, or phone..."
+                className="w-full rounded-lg border border-gray-200 bg-gray-50/50 py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+              />
             </div>
-          ))}
-        </div>
-      </div>
+
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 mr-1 hidden sm:flex">
+                <ListFilter className="h-3.5 w-3.5" />
+                <span>Filters:</span>
+              </div>
+              
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer"
+              >
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="inactive">Inactive</option>
+              </select>
+
+              <select
+                value={industryFilter}
+                onChange={(e) => setIndustryFilter(e.target.value)}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer"
+              >
+                <option value="">All Industries</option>
+                <option value="restaurant">Restaurant</option>
+                <option value="bar">Bar</option>
+                <option value="hotel">Hotel</option>
+                <option value="supermarket">Supermarket</option>
+                <option value="pharmacy">Pharmacy</option>
+                <option value="shop">Shop</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Table / List View */}
+          <div className="rounded-xl border border-gray-100 bg-white shadow-xs overflow-hidden">
+            <FilterableFetchCompany
+              search={searchQuery}
+              status={statusFilter}
+              industry={industryFilter}
+            />
+          </div>
+        </>
+      ) : (
+        /* Create Form View */
+        <AddCompany onSuccess={() => setActiveView("companies")} onCancel={() => setActiveView("companies")} />
+      )}
     </main>
   );
 }

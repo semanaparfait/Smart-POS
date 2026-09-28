@@ -1,18 +1,20 @@
 import { create } from "zustand";
 import { API_URL } from "@/config/api";
-import type { CompanyType } from "@/stores/companies/companyTypes";
-import useAuthStore from "@/stores/auth/authstore"; 
-
+import type {
+  CompanyType,
+  CompanyTypePayload,
+  CompanyTypeResponse,
+} from "@/stores/companies/companyTypes";
+import useAuthStore from "@/stores/auth/authstore";
 
 const getAuthToken = (): string | null => {
-
   return useAuthStore.getState().token || localStorage.getItem("accessToken");
 };
 
 const useCompanyStore = create<{
   companies: CompanyType[];
   fetchCompanies: () => Promise<void>;
-  addCompany: (company: CompanyType) => Promise<void>;
+  addCompany: (company: CompanyTypePayload) => Promise<CompanyTypeResponse>;
   updateCompany: (id: string, company: Partial<CompanyType>) => Promise<void>;
   deleteCompany: (id: string) => Promise<void>;
 }>((set, get) => ({
@@ -31,7 +33,7 @@ const useCompanyStore = create<{
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -40,14 +42,13 @@ const useCompanyStore = create<{
     }
 
     const resData = await response.json();
-    
-   
+
     const companiesArray = resData.data ?? resData.companies ?? resData;
-    
+
     set({ companies: Array.isArray(companiesArray) ? companiesArray : [] });
   },
 
-  addCompany: async (company: CompanyType) => {
+  addCompany: async (company: CompanyTypePayload) => {
     if (!API_URL) throw new Error("API_URL is not defined");
 
     const token = getAuthToken();
@@ -56,7 +57,7 @@ const useCompanyStore = create<{
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`, // Added auth protection
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(company),
     });
@@ -67,6 +68,7 @@ const useCompanyStore = create<{
     const newCompany = resData.data ?? resData;
 
     set({ companies: [...get().companies, newCompany] });
+    return newCompany;
   },
 
   updateCompany: async (id: string, company: Partial<CompanyType>) => {
@@ -78,7 +80,7 @@ const useCompanyStore = create<{
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`, // Added auth protection
+        Authorization: `Bearer ${token}`, // Added auth protection
       },
       body: JSON.stringify(company),
     });
@@ -102,7 +104,7 @@ const useCompanyStore = create<{
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`, // Added auth protection
+        Authorization: `Bearer ${token}`, // Added auth protection
       },
     });
 
