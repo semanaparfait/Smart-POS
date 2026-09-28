@@ -11,9 +11,31 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
+import useAuthStore from "@/stores/auth/authstore";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
+  const deviceId = "string"
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const login = useAuthStore((state: any) => state.login);
+
+const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+
+  try {
+    await login({
+      deviceId,
+      email,
+      password,
+    });
+
+    toast.success("Login successful!");
+  } catch (error) {
+    toast.error("Login failed");
+  }
+};
 
   return (
     <main className="min-h-screen bg-[#f4f8f5] px-4 py-5 sm:px-6 lg:px-8">
@@ -100,7 +122,7 @@ export default function LoginPage() {
 
             <form
               className="space-y-5"
-              onSubmit={(event) => event.preventDefault()}
+              onClick={handleLogin}
             >
               <div>
                 <label
@@ -120,6 +142,8 @@ export default function LoginPage() {
                     type="email"
                     autoComplete="email"
                     required
+					value={email}
+					onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@company.com"
                     className="h-13 w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#00a66c] focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
                   />
@@ -152,6 +176,8 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     required
+					value={password}
+					onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
                     className="h-13 w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-11 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#00a66c] focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
                   />
@@ -183,6 +209,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
+				
                 className="group flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-[#00a66c] text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-[#008f5d] hover:shadow-xl hover:shadow-emerald-600/25 active:scale-[0.99]"
               >
                 Sign in
