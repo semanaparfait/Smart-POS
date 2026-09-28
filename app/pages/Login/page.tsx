@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -15,25 +16,40 @@ import useAuthStore from "@/stores/auth/authstore";
 import toast from "react-hot-toast";
 
 export default function LoginPage() {
-  const deviceId = "string"
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
+  const router = useRouter();
+  const deviceId = "string";
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const login = useAuthStore((state: any) => state.login);
 
 const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
+  setLoading(true);
 
   try {
-    await login({
+    const loggedUser = await login({
       deviceId,
       email,
       password,
     });
 
+    // console.log("LOGGED USER:", loggedUser);
+    // console.log("ROLE:", loggedUser.role);
+
     toast.success("Login successful!");
-  } catch (error) {
-    toast.error("Login failed");
+
+    if (loggedUser.role?.toUpperCase() === "SUPERADMIN") {
+      router.push("/admin");
+    } else {
+      router.push("/");
+    }
+  } catch (error: any) {
+    toast.error(error.message || "Login failed");
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -120,10 +136,7 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
               </p>
             </div>
 
-            <form
-              className="space-y-5"
-              onClick={handleLogin}
-            >
+            <form className="space-y-5" onSubmit={handleLogin}>
               <div>
                 <label
                   htmlFor="email"
@@ -142,8 +155,8 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
                     type="email"
                     autoComplete="email"
                     required
-					value={email}
-					onChange={(e) => setEmail(e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@company.com"
                     className="h-13 w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#00a66c] focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
                   />
@@ -176,8 +189,8 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     required
-					value={password}
-					onChange={(e) => setPassword(e.target.value)}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
                     className="h-13 w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-11 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#00a66c] focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
                   />
@@ -209,10 +222,10 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
 
               <button
                 type="submit"
-				
-                className="group flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-[#00a66c] text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-[#008f5d] hover:shadow-xl hover:shadow-emerald-600/25 active:scale-[0.99]"
+                disabled={loading}
+                className="group flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-[#00a66c] text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-[#008f5d] hover:shadow-xl hover:shadow-emerald-600/25 active:scale-[0.99] disabled:opacity-60"
               >
-                Sign in
+                {loading ? "Signing in..." : "Sign in"}
                 <ArrowRight
                   className="h-4 w-4 transition-transform group-hover:translate-x-1"
                   aria-hidden="true"

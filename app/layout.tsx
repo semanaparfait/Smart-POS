@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Caveat } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -32,6 +33,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans bg-[#F8FAF8] text-slate-900 selection:bg-emerald-500 selection:text-white">
         {children}
+        <Toaster position="top-right" />
       </body>
     </html>
   );
