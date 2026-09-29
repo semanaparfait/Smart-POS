@@ -70,7 +70,7 @@ export default function Hero() {
                 href="#watch-demo"
                 className="inline-flex items-center justify-center gap-2.5 rounded-full border border-slate-300 bg-white hover:bg-slate-50 px-6 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition-all duration-200"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-[#00a66c] border border-emerald-200">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-[#00a66c] ">
                   <Play className="h-3 w-3 fill-[#00a66c] translate-x-[0.5px]" />
                 </div>
                 <span>Watch Demo</span>
