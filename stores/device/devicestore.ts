@@ -119,7 +119,7 @@ const useDeviceStore = create<{
       console.warn("No access token found. Postponing deleteDevice.");
       return null;
     }
-    const response = await fetch(`${API_URL}/api/v1/devices/${id}`, {
+    const response = await fetch(`${API_URL}/api/v1/devices/${id}/delete`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
