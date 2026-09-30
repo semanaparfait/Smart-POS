@@ -87,27 +87,13 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 h-screen bg-slate-50/50 border-r border-slate-200/80 flex flex-col select-none">
-      {/* Brand Header */}
-      <div className="h-16 px-5 flex items-center justify-between border-b border-slate-200/70 bg-white">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center shadow-sm shadow-emerald-500/20 text-white font-bold text-base tracking-wider ring-1 ring-black/5">
-            S
-          </div>
-          <div className="leading-tight">
-            <h1 className="font-semibold text-sm text-slate-900 tracking-tight">SmartPOS</h1>
-            <span className="inline-block text-[10px] font-medium uppercase tracking-wider text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-              Super Admin
-            </span>
-          </div>
-        </div>
-      </div>
+    <aside className="group/sidebar absolute inset-y-0 left-0 z-30 flex h-full w-16 flex-col overflow-hidden border-r border-slate-200/80 bg-slate-50/95 shadow-sm backdrop-blur transition-[width] duration-200 ease-out hover:w-64 select-none">
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6 [scrollbar-width:thin] [scrollbar-color:theme(colors.slate.200)_transparent]">
+      <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-6 [scrollbar-width:thin] [scrollbar-color:theme(colors.slate.200)_transparent]">
         {menuItems.map((section) => (
           <div key={section.title} className="space-y-1">
-            <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <p className="h-4 overflow-hidden px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 opacity-0 transition-opacity duration-150 group-hover/sidebar:opacity-100">
               {section.title}
             </p>
 
@@ -143,14 +129,14 @@ export default function Sidebar() {
                   </>
                 );
 
-                const itemClasses = `group w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 relative ${
+                const itemClasses = `group w-full flex items-center gap-3 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all duration-150 relative ${
                   isActive
                     ? "bg-emerald-50/80 text-emerald-900 font-semibold"
                     : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 active:scale-[0.99]"
                 }`;
 
                 return item.href ? (
-                  <Link key={item.name} href={item.href} className={itemClasses}>
+                  <Link key={item.name} href={item.href} className={itemClasses} title={item.name}>
                     {isActive && (
                       <span className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-emerald-600 rounded-r-full" />
                     )}
@@ -168,16 +154,16 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer / User Profile & Logout */}
-      <div className="p-3 border-t border-slate-200/70 bg-white space-y-1.5">
+      <div className="space-y-1.5 border-t border-slate-200/70 bg-white p-2">
         <div className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-50 transition cursor-pointer">
           <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-700">
             AD
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-slate-800 truncate">Alex Davis</p>
-            <p className="text-[11px] text-slate-400 truncate">alex@smartpos.io</p>
+          <div className="min-w-0 flex-1 overflow-hidden opacity-0 transition-opacity duration-150 group-hover/sidebar:opacity-100">
+            <p className="truncate text-xs font-semibold text-slate-800">Alex Davis</p>
+            <p className="truncate text-[11px] text-slate-400">alex@smartpos.io</p>
           </div>
-          <ChevronRight size={14} className="text-slate-400" />
+          <ChevronRight size={14} className="shrink-0 text-slate-400 opacity-0 transition-opacity duration-150 group-hover/sidebar:opacity-100" />
         </div>
 
         <button
@@ -185,7 +171,7 @@ export default function Sidebar() {
           className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition"
         >
           <LogOut size={15} />
-          <span>Log out</span>
+          <span className="opacity-0 transition-opacity duration-150 group-hover/sidebar:opacity-100">Log out</span>
         </button>
       </div>
     </aside>
