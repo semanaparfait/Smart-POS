@@ -12,18 +12,22 @@ import {
   SlidersHorizontal,
   ChevronDown,
 } from "lucide-react";
-import FetchDevices from "./components/FetchDevices";
+import FetchDevices from "@/app/admin/tabs/devices/components/FetchDevices";
+import useDeviceStore from "@/stores/device/devicestore";
 
 export default function DevicesPage() {
   const [activeView, setActiveView] = useState<"devices" | "add">("devices");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [companyFilter, setCompanyFilter] = useState("");
+  const { devices, fetchDevices } = useDeviceStore();
 
   const devicesCounts = [
     {
       name: "Active Devices",
-      count: 8,
+      count: devices.filter(
+        (device) => device.registrationStatus === "REGISTERED",
+      ).length,
       icon: Wifi,
       description: "Connected and processing transactions",
       iconStyle: "text-emerald-600 bg-emerald-50 border-emerald-100",
@@ -31,7 +35,11 @@ export default function DevicesPage() {
     },
     {
       name: "Pending Activation",
-      count: 2,
+      count: devices.filter(
+        (device) =>
+          device.registrationStatus === "PENDING" ||
+          device.registrationStatus === "REQUESTED",
+      ).length,
       icon: Clock3,
       description: "Awaiting merchant configuration",
       iconStyle: "text-amber-600 bg-amber-50 border-amber-100",
@@ -39,7 +47,7 @@ export default function DevicesPage() {
     },
     {
       name: "Offline Devices",
-      count: 1,
+      count: 0,
       icon: WifiOff,
       description: "No heartbeat detected in >15m",
       iconStyle: "text-rose-600 bg-rose-50 border-rose-100",
@@ -47,7 +55,9 @@ export default function DevicesPage() {
     },
     {
       name: "Deactivated Devices",
-      count: 1,
+      count: devices.filter(
+        (device) => device.registrationStatus === "DISABLED",
+      ).length,
       icon: Ban,
       description: "Revoked or archived by administrator",
       iconStyle: "text-slate-600 bg-slate-100 border-slate-200",
@@ -61,7 +71,9 @@ export default function DevicesPage() {
       <div className="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900 capitalize">
-            {activeView === "devices" ? "Devices Management" : "Register Device"}
+            {activeView === "devices"
+              ? "Devices Management"
+              : "Register Device"}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
             {activeView === "devices"
@@ -182,8 +194,12 @@ export default function DevicesPage() {
       ) : (
         /* Add Device Form Placeholder */
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs">
-          <h2 className="text-base font-semibold text-gray-900">Device Details</h2>
-          <p className="mt-1 text-sm text-gray-500">Enter the hardware identifier and allocate a merchant.</p>
+          <h2 className="text-base font-semibold text-gray-900">
+            Device Details
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Enter the hardware identifier and allocate a merchant.
+          </p>
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1.5">
