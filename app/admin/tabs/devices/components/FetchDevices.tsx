@@ -17,6 +17,7 @@ import {
   ShieldAlert, // Used for Rejected
   PowerOff, // Used for Disabled
   Layers,
+  MapPin,
 } from "lucide-react";
 
 export enum RegistrationStatusEnum {
@@ -198,119 +199,131 @@ export default function FetchDevices() {
   }
 
   return (
-    <div className="mt-5 bg-">
+    <div className="mt-5 bg-gray-200 p-3">
+      <div className="flex gap-4 flex-wrap ">
+        {devices.map((device) => {
+          // Resolve status badge
+          const status = statusConfig[device.registrationStatus] ?? {
+            label: device.registrationStatus,
+            badge: "bg-gray-50 text-gray-700 border-gray-200 ring-gray-600/10",
+            icon: Clock3,
+          };
+          const StatusIcon = status.icon;
 
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {devices.map((device) => {
-        // Resolve status badge
-        const status = statusConfig[device.registrationStatus] ?? {
-          label: device.registrationStatus,
-          badge: "bg-gray-50 text-gray-700 border-gray-200 ring-gray-600/10",
-          icon: Clock3,
-        };
-        const StatusIcon = status.icon;
+          // Resolve platform / OS icon & visual identity
+          const deviceType = getDeviceTypeTheme(
+            device.deviceOs,
+            device.deviceName,
+          );
+          const DeviceIcon = deviceType.icon;
 
-        // Resolve platform / OS icon & visual identity
-        const deviceType = getDeviceTypeTheme(
-          device.deviceOs,
-          device.deviceName,
-        );
-        const DeviceIcon = deviceType.icon;
+          return (
+            <div
+              key={device.id}
+              className="group   w-fit  flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div>
+                {/* Header: OS/Hardware Icon, Status Pill & Menu */}
+                <div className="flex items-start justify-between gap-2">
+                  <div
+                    className={`flex  h-12 w-12 items-center justify-center rounded-xl border ${deviceType.containerBg} shadow-xs transition group-hover:scale-105`}
+                  >
+                    <DeviceIcon className="h-6 w-6 stroke-[2]" />
+                  </div>
 
-        return (
-          <div
-            key={device.id}
-            className="group flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <div>
-              {/* Header: OS/Hardware Icon, Status Pill & Menu */}
-              <div className="flex items-start justify-between gap-2">
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-xl border ${deviceType.containerBg} shadow-xs transition group-hover:scale-105`}
-                >
-                  <DeviceIcon className="h-6 w-6 stroke-[2]" />
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${status.badge}`}
+                    >
+                      <StatusIcon className="h-3 w-3" />
+                      {status.label}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="Device actions"
+                      className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${status.badge}`}
-                  >
-                    <StatusIcon className="h-3 w-3" />
-                    {status.label}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label="Device actions"
-                    className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
+                {/* Title & Hardware Identifier */}
+                <div className="mt-4">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold  line-clamp-1 group-hover:text-emerald-600 transition-colors">
+                      {device.company.name.charAt(0).toUpperCase()}
+                      {device.company.name.slice(1)}
+                    </h3>
+                  </div>
+                </div>
+                <div className="mt-1 space-y-2 ">
+                  <div className="mt-1 flex items-center gap-2 text-xs">
+                    <Building2 className="h-4 w-4 " />
+                    <p>{device.company.name}</p>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2 text-xs">
+                    <MapPin className="h-4 w-4 " />
+                    <p>{device.company.location}</p>
+                  </div>
+                </div>
+
+                {/* Badges: Form factor & Registration Date */}
+                <div className="mt-3.5 flex  items-center gap-1.5 bg-gray-50/70 p-3 rounded-lg border border-gray-100/80">
+                  <div className="whitespace-nowrap">
+                    <p className="text-sm">Device Id</p>
+                    <p className="text-xs text-gray-500 font-mono whitespace-nowrap">
+                      {device.deviceId}
+                    </p>
+                  </div>
+
+                  <div className="whitespace-nowrap">
+                    <p className="text-sm">Created At</p>
+                    <p className="text-xs text-gray-500 whitespace-nowrap">
+                      {new Date(device.createdAt).toLocaleDateString(
+                        undefined,
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        },
+                      )}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Title & Hardware Identifier */}
-              <div className="mt-4">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-gray-900 line-clamp-1 group-hover:text-emerald-600 transition-colors">
-                    {device.deviceName}
-                  </h3>
+              {/* Merchant Details Footer */}
+              <div className="mt-5 border-t border-gray-100 pt-3.5 flex items-center justify-between text-xs text-gray-600">
+                <div className="flex items-center gap-2 min-w-0">
+                  <CompanyLogo
+                    logo={device.company?.logo ?? null}
+                    name={device.company?.name}
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-gray-800">
+                      {device.company?.name || "Unassigned"}
+                    </p>
+                    <p className="truncate text-[11px] text-gray-400">
+                      {device.company?.location || "No location set"}
+                    </p>
+                  </div>
                 </div>
-                <p className="mt-0.5 font-mono text-xs text-gray-500 tracking-tight">
-                  ID: {device.deviceId}
-                </p>
-              </div>
 
-              {/* Badges: Form factor & Registration Date */}
-              <div className="mt-3.5 flex flex-wrap items-center gap-1.5">
-                <span
-                  className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium ${deviceType.pillBorder}`}
+                <button
+                  type="button"
+                  title="View device details"
+                  className="ml-2 shrink-0 rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-emerald-600 transition-colors"
                 >
-                  <Layers className="h-3 w-3 opacity-70" />
-                  {device.deviceOs || deviceType.label}
-                </span>
-
-                <span className="inline-flex items-center gap-1 rounded-md border border-gray-200/60 bg-gray-50/70 px-2 py-0.5 text-xs text-gray-600">
-                  <Calendar className="h-3 w-3 text-gray-400" />
-                  {new Date(device.createdAt).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </span>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </button>
               </div>
             </div>
-
-            {/* Merchant Details Footer */}
-            <div className="mt-5 border-t border-gray-100 pt-3.5 flex items-center justify-between text-xs text-gray-600">
-              <div className="flex items-center gap-2 min-w-0">
-                <CompanyLogo
-                  logo={device.company?.logo ?? null}
-                  name={device.company?.name}
-                />
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-gray-800">
-                    {device.company?.name || "Unassigned"}
-                  </p>
-                  <p className="truncate text-[11px] text-gray-400">
-                    {device.company?.location || "No location set"}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                title="View device details"
-                className="ml-2 shrink-0 rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-emerald-600 transition-colors"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
