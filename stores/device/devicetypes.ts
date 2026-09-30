@@ -28,3 +28,25 @@ export interface DeviceType   {
      type:CompanyKind
     }
   }
+
+  export interface DeviceByIdResponse {
+ id:string,
+ createdAt:string,
+ updatedAt:string,
+ deviceId:string,
+ deviceName:string,
+ deviceOs:string,
+ registrationStatus:RegistrationStatusEnum,
+ company: {
+   id:string,
+   createdAt:string,
+   updatedAt:string,
+   code:string,
+   logo:string,
+   name:string,
+   email:string,
+   phone_number:string,
+   location:string,
+   type:CompanyKind
+  }
+}

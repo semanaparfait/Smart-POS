@@ -11,14 +11,15 @@ import {
   Ban,
   MoreVertical,
   ExternalLink,
-  MonitorCheck, // Used for Windows POS Desktop terminal
-  Globe, // Used for Web POS
-  Tablet, // Used for iPad/Tablets
-  ShieldAlert, // Used for Rejected
-  PowerOff, // Used for Disabled
+  MonitorCheck, 
+  Globe, 
+  Tablet, 
+  ShieldAlert, 
+  PowerOff, 
   Layers,
   MapPin,
 } from "lucide-react";
+import Link from "next/link";
 
 export enum RegistrationStatusEnum {
   PENDING = "PENDING",
@@ -199,7 +200,7 @@ export default function FetchDevices() {
   }
 
   return (
-    <div className="mt-5 bg-gray-200 p-3">
+    <div className="mt-5 bg-gray-200 p-3 rounded-2xl">
       <div className="flex gap-4 flex-wrap ">
         {devices.map((device) => {
           // Resolve status badge
@@ -218,12 +219,16 @@ export default function FetchDevices() {
           const DeviceIcon = deviceType.icon;
 
           return (
-            <div
+            <Link
               key={device.id}
-              className="group   w-fit  flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
+              href={`/admin/tabs/devices/${device.id}`}
             >
-              <div>
-                {/* Header: OS/Hardware Icon, Status Pill & Menu */}
+              <div
+                key={device.id}
+                className="group   w-fit  flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div>
+                  {/* Header: OS/Hardware Icon, Status Pill & Menu */}
                 <div className="flex items-start justify-between gap-2">
                   <div
                     className={`flex  h-12 w-12 items-center justify-center rounded-xl border ${deviceType.containerBg} shadow-xs transition group-hover:scale-105`}
@@ -321,6 +326,7 @@ export default function FetchDevices() {
                 </button>
               </div>
             </div>
+          </Link>
           );
         })}
       </div>
