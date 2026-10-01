@@ -4,11 +4,23 @@ export enum UserRole {
     EMPLOYEE = "EMPLOYEE",
     OWNER = "OWNER"
 }
+
+  export interface EmployeeResponse {
+    id: string,
+    createdAt: string,
+    updatedAt: string,
+    name: string,
+    email: string,
+    phone: string,
+    salary: number,
+    shift: string
+  }
+
 export interface UserResponse    {
     id: string,
     createdAt: string,
     updatedAt: string,
-    employee: UserRole,
+    employee: EmployeeResponse,
     company: {
       id: string,
       createdAt: string,

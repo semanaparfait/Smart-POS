@@ -131,7 +131,7 @@ export default function UserDetailPage() {
                 {user.name}
               </h1>
               <p className="text-xs font-medium text-slate-400">
-                {user.role} &bull; {user.employee}
+                {user.role} &bull; {user.employee?.name || "No employee"}
               </p>
 
               <div className="mt-3">

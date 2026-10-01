@@ -135,10 +135,8 @@ export default function FetchUsers({
         : "N/A";
         
         return (
-          <Link
-          href={`/admin/tabs/users/${user.id}`}>
+          <Link key={user.id} href={`/admin/tabs/users/${user.id}`}>
           <article
-            key={user.id}
             className="group flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
           >
             <div>
@@ -151,7 +149,7 @@ export default function FetchUsers({
                       {user.name || "Unnamed User"}
                     </h3>
                     <p className="truncate text-xs font-medium text-slate-400">
-                      {user.role} &bull; {user.employee}
+                      {user.role} &bull; {user.employee?.name || "No employee"}
                     </p>
                   </div>
                 </div>
