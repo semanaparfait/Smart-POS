@@ -2,18 +2,23 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
-const navLinks = [
-  { name: "Home", href: "#", active: true },
-  { name: "Features", href: "#features", active: false },
-  { name: "Industries", href: "#industries", active: false },
-  { name: "Pricing", href: "#pricing", active: false },
-  { name: "About", href: "#about", active: false },
-  { name: "Contact", href: "#contact", active: false },
-];
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+
+  const isJobsPage = pathname?.includes("/jobs");
+
+  const navLinks = [
+    { name: "Home", href: "/", active: pathname === "/" },
+    { name: "Features", href: isJobsPage ? "/#features" : "#features", active: false },
+    { name: "Industries", href: isJobsPage ? "/#industries" : "#industries", active: false },
+    { name: "Pricing", href: isJobsPage ? "/#pricing" : "#pricing", active: false },
+    { name: "About", href: isJobsPage ? "/#about" : "#about", active: false },
+    { name: "Jobs", href: "/pages/jobs", active: Boolean(isJobsPage) },
+    { name: "Contact", href: isJobsPage ? "/#contact" : "#contact", active: false },
+  ];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/90 backdrop-blur-md">

@@ -8,10 +8,10 @@
 }
 
 :root {
-  --background: #ffffff;
+  --background: #E2E8F0;
   --foreground: #0f172a;
-  --emerald-primary: #00a66c;
-  --emerald-dark: #008757;
+  --emerald-primary: #CCFF00;
+  --emerald-dark: #CCFF00;
 }
 
 body {
