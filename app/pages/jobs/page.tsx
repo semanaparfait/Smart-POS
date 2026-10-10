@@ -101,10 +101,7 @@ export default function JobsPage() {
 
 
                 <div className="relative z-10 mx-auto max-w-4xl text-center space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-semibold text-slate-200 backdrop-blur-md mb-2">
-                        <TrendingUp className="w-4 h-4 text-[#CCFF00]" />
-                        <span>Build Your Career with SmartPOS Rwanda</span>
-                    </div>
+
 
                     <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
                         Find Your Next <br />
