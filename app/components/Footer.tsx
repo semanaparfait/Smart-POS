@@ -114,9 +114,13 @@ export default function Footer() {
                 )}
                 {phone && (
                   <li>
-                    <a href={phone} className="flex items-center gap-3 text-white/70 hover:text-lime">
-                      <Phone className="h-4 w-4 shrink-0" aria-hidden="true" /> {SITE_CONTACT.phone}
-                    </a>
+                    <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-white/70">
+                      <Phone className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      <a href={phone} className="hover:text-lime">{SITE_CONTACT.phone}</a>
+                      {SITE_CONTACT.phoneAlt && (
+                        <a href={phoneLink(SITE_CONTACT.phoneAlt)} className="hover:text-lime">{SITE_CONTACT.phoneAlt}</a>
+                      )}
+                    </span>
                   </li>
                 )}
                 {SITE_CONTACT.email && (

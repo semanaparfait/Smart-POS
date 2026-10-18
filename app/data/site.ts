@@ -7,10 +7,12 @@
  */
 export const SITE_CONTACT = {
   /** Display format, e.g. "+250 788 123 456" */
-  phone: "",
+  phone: "0787 845 162",
+  /** Second phone number shown next to the first, e.g. on the contact page */
+  phoneAlt: "0722 245 279",
   /** International digits only, no "+" or spaces, e.g. "250788123456" (used for wa.me links) */
   whatsapp: "",
-  email: "",
+  email: "sales@smartpos.rw",
   /** e.g. "KG 7 Ave, Kigali, Rwanda" */
   address: "",
   /** e.g. "Mon–Sat, 8:00–18:00" */
@@ -30,8 +32,12 @@ export const whatsappLink = (message = "Hello SmartPOS, I would like to know mor
     ? `https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(message)}`
     : "";
 
-export const phoneLink = () =>
-  SITE_CONTACT.phone ? `tel:${SITE_CONTACT.phone.replace(/[^\d+]/g, "")}` : "";
+/** tel: link in international format (Rwandan 07… numbers become +2507…) */
+export const phoneLink = (number: string = SITE_CONTACT.phone) => {
+  const digits = number.replace(/[^\d+]/g, "");
+  if (!digits) return "";
+  return `tel:${digits.startsWith("0") ? `+250${digits.slice(1)}` : digits}`;
+};
 
 /** Business types offered in the installation request form */
 export const BUSINESS_TYPES = [

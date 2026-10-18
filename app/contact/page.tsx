@@ -24,6 +24,7 @@ export default async function ContactPage({
   const channels: { icon: LucideIcon; label: string; value: string; href?: string; external?: boolean }[] = [
     { icon: MessageCircle, label: "WhatsApp", value: "Chat with our team", href: whatsappLink(), external: true },
     { icon: Phone, label: "Phone", value: SITE_CONTACT.phone, href: phoneLink() },
+    { icon: Phone, label: "Phone (alternative)", value: SITE_CONTACT.phoneAlt, href: phoneLink(SITE_CONTACT.phoneAlt) },
     { icon: Mail, label: "Email", value: SITE_CONTACT.email, href: SITE_CONTACT.email ? `mailto:${SITE_CONTACT.email}` : "" },
     { icon: MapPin, label: "Office", value: SITE_CONTACT.address },
     { icon: Clock, label: "Hours", value: SITE_CONTACT.hours },

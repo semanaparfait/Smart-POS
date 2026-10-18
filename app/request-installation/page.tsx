@@ -88,9 +88,13 @@ export default async function RequestInstallationPage({
                 )}
                 {phone && (
                   <li>
-                    <a href={phone} className="flex items-center gap-3 font-semibold hover:underline">
-                      <Phone className="h-4 w-4" aria-hidden="true" /> {SITE_CONTACT.phone}
-                    </a>
+                    <span className="flex flex-wrap items-center gap-x-3 gap-y-1 font-semibold">
+                      <Phone className="h-4 w-4" aria-hidden="true" />
+                      <a href={phone} className="hover:underline">{SITE_CONTACT.phone}</a>
+                      {SITE_CONTACT.phoneAlt && (
+                        <a href={phoneLink(SITE_CONTACT.phoneAlt)} className="hover:underline">{SITE_CONTACT.phoneAlt}</a>
+                      )}
+                    </span>
                   </li>
                 )}
                 {SITE_CONTACT.email && (
