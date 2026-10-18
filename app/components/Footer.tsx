@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { ArrowRight, Clock, Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
-import logo from "@/public/footer_logo.png"
+import Logo from "@/app/components/Logo";
 import { SITE_CONTACT, SITE_SOCIAL, phoneLink, whatsappLink } from '@/app/data/site';
 
 const socialIcons: Record<keyof typeof SITE_SOCIAL, { label: string; path: string }> = {
@@ -59,8 +58,8 @@ export default function Footer() {
 
           {/* Brand */}
           <div className="space-y-4 lg:col-span-4">
-            <Link href="/" className="inline-block">
-              <Image src={logo} alt="SmartPOS" className="w-36" />
+            <Link href="/" aria-label="SmartPOS home" className="inline-block">
+              <Logo tone="dark" />
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-white/55">
               Smarter business. Easier operations. Point of sale and business management for businesses in Rwanda.

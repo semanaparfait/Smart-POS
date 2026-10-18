@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -18,8 +17,7 @@ import {
 import { useState } from "react";
 import useAuthStore from "@/stores/auth/authstore";
 import toast from "react-hot-toast";
-import logo from "@/public/smartpos_logo.png";
-import logoLight from "@/public/footer_logo.png";
+import Logo from "@/app/components/Logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -73,7 +71,7 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
           <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-lime/15 blur-2xl" />
 
           <Link href="/" className="relative">
-            <Image src={logoLight} alt="SmartPOS" className="w-40" priority />
+            <Logo tone="dark" markClassName="h-14 w-14" textClassName="text-3xl" />
           </Link>
 
           <div className="relative max-w-md">
@@ -120,7 +118,7 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
             </Link>
 
             <Link href="/" className="mb-10 block lg:hidden">
-              <Image src={logo} alt="SmartPOS" className="w-36" priority />
+              <Logo />
             </Link>
 
             <div className="mb-9">

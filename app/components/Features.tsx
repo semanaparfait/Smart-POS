@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoMark } from "@/app/components/Logo";
 import {
   CreditCard,
   LayoutGrid,
@@ -144,7 +145,7 @@ export default function Features() {
                 {/* Top bar */}
                 <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 text-white">
                   <span className="text-xs font-extrabold">
-                    Smart<span className="text-lime">POS</span>
+                    <LogoMark tone="dark" className="-my-1 mr-0.5 inline h-4 w-4 align-middle" />SmartPOS
                     <span className="ml-2 font-semibold text-white/50">Orders · Today</span>
                   </span>
                   <span className="flex items-center gap-1.5 text-[10px] font-semibold text-white/60">

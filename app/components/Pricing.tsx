@@ -6,7 +6,7 @@ const plans = [
   {
     name: 'Starter',
     subtitle: 'Perfect for small businesses',
-    price: '$29',
+    price: '100,000 RWF',
     period: '/month',
     features: ['1 POS device', 'Basic reports', 'Inventory tracking', 'Email support'],
     cta: { label: 'Get started', href: '/request-installation?plan=starter' },
@@ -15,7 +15,7 @@ const plans = [
     name: 'Business',
     popular: true,
     subtitle: 'For growing businesses',
-    price: '$59',
+    price: '150,000 RWF',
     period: '/month',
     features: ['Up to 3 POS devices', 'Advanced reports', 'Employee management', 'Priority support'],
     cta: { label: 'Get started', href: '/request-installation?plan=business' },
@@ -74,7 +74,7 @@ export default function Pricing() {
                 <p className={`mt-1 text-sm ${dark ? 'text-white/60' : 'text-ink/60'}`}>{plan.subtitle}</p>
 
                 <div className="mt-8 flex items-baseline gap-1">
-                  <span className={`text-5xl font-extrabold tracking-[-0.03em] ${dark ? 'text-lime' : 'text-ink'}`}>
+                  <span className={`text-4xl font-extrabold tracking-[-0.03em] ${dark ? 'text-lime' : 'text-ink'}`}>
                     {plan.price}
                   </span>
                   {plan.period && (

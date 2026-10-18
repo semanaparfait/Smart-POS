@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import Image from "next/image";
 import { ArrowRight, Menu, X } from "lucide-react";
-import logo from "@/public/smartpos_logo.png"
+import Logo from "@/app/components/Logo";
 
 const INSTALL_HREF = "/request-installation";
 
@@ -37,8 +36,8 @@ export default function Navbar() {
     <header className="site sticky top-0 z-50 w-full border-b border-ink/10 bg-white/85 backdrop-blur-md">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Logo */}
-        <Link href="/" className="shrink-0">
-          <Image src={logo} alt="SmartPOS" className="w-32" priority />
+        <Link href="/" aria-label="SmartPOS home" className="shrink-0">
+          <Logo />
         </Link>
 
         {/* Desktop Navigation Links */}

@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import Link from "next/link";
+import { LogoMark } from "@/app/components/Logo";
 import { ArrowDownRight, ArrowRight, Search } from 'lucide-react';
 
 /* ------------------------------------------------------------------
@@ -121,8 +122,9 @@ export default function Hero() {
               {/* Top bar: workspace + module tabs (the copy's nouns, as navigation) */}
               <div className="flex items-center justify-between gap-4 border-b border-white/10 px-4 sm:px-6">
                 <div className="flex min-w-0 items-center gap-6">
-                  <span className="shrink-0 py-4 text-sm font-extrabold tracking-tight">
-                    Smart<span className="text-lime">POS</span>
+                  <span className="flex shrink-0 items-center gap-1 py-4 text-sm font-extrabold tracking-tight">
+                    <LogoMark tone="dark" className="h-5 w-5" />
+                    SmartPOS
                   </span>
                   <nav className="flex min-w-0 items-center gap-5 overflow-hidden text-[13px] font-semibold">
                     {modules.map((m, i) => (
