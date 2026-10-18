@@ -159,7 +159,10 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-8 flex flex-col items-center justify-between gap-4 text-xs text-white/45 sm:flex-row">
           <p>© {new Date().getFullYear()} SmartPOS. All rights reserved.</p>
-          <p>Made for businesses in Rwanda.</p>
+          <nav aria-label="Legal" className="flex items-center gap-5">
+            <Link href="/terms" className="transition-colors hover:text-lime">Terms &amp; Conditions</Link>
+            <Link href="/privacy" className="transition-colors hover:text-lime">Privacy Policy</Link>
+          </nav>
         </div>
       </div>
 

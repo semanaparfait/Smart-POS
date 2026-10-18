@@ -402,6 +402,12 @@ export default function JobsPage() {
                                 </label>
                             </div>
 
+                            <p className="text-xs leading-relaxed text-ink/50">
+                                By applying you agree to our{" "}
+                                <Link href="/terms" className="font-semibold text-ink underline underline-offset-2">Terms</Link> and{" "}
+                                <Link href="/privacy" className="font-semibold text-ink underline underline-offset-2">Privacy Policy</Link>.
+                            </p>
+
                             <div className="flex items-center justify-end gap-3 border-t border-ink/10 pt-5">
                                 <button
                                     type="button"

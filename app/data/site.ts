@@ -55,3 +55,15 @@ export const CONTACT_TOPICS = [
   { value: "support", label: "Support" },
   { value: "partnership", label: "Partnership" },
 ] as const;
+
+/**
+ * Legal details used by the Terms & Conditions and Privacy Policy pages.
+ * TODO: confirm with your lawyer — use the company's registered legal name.
+ */
+export const SITE_LEGAL = {
+  /** Registered company name, e.g. "SmartPOS Ltd" */
+  companyName: "SmartPOS",
+  country: "Rwanda",
+  /** Update this date whenever either document changes */
+  lastUpdated: "18 October 2026",
+};

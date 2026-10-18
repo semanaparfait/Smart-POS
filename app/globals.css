@@ -108,6 +108,35 @@ body {
   animation-delay: var(--delay, 0ms);
 }
 
+/* ---------- Legal pages (Terms, Privacy) ---------- */
+
+.legal-body ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.legal-body ul li {
+  position: relative;
+  padding-left: 1.25rem;
+}
+
+.legal-body ul li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 0.45rem;
+  height: 0.45rem;
+  background: var(--color-lime);
+  box-shadow: 0 0 0 1px rgba(32, 40, 59, 0.25);
+}
+
+.legal-body strong {
+  color: var(--color-ink);
+}
+
 /* ---------- Testimonials carousel ---------- */
 
 /* Progress bar fills over one slide; its animationend advances the carousel */

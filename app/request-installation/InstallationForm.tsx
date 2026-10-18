@@ -203,7 +203,11 @@ export default function InstallationForm({ initialPlan }: { initialPlan: Plan })
       )}
 
       <div className="flex flex-col gap-4 border-t border-ink/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-ink/50">Fields marked * are required.</p>
+        <p className="text-xs leading-relaxed text-ink/50">
+          Fields marked * are required. By sending this request you agree to our{" "}
+          <Link href="/terms" className="font-semibold text-ink underline underline-offset-2">Terms</Link> and{" "}
+          <Link href="/privacy" className="font-semibold text-ink underline underline-offset-2">Privacy Policy</Link>.
+        </p>
         <button
           type="submit"
           disabled={submitting}
