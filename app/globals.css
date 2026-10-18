@@ -5,14 +5,18 @@
     var(--font-jakarta), "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont,
     sans-serif;
   --font-handwriting: var(--font-caveat), "Caveat", cursive;
+
+  /* SmartPOS brand palette */
+  --color-ink: #20283b; /* Ink Navy: navigation, headings, dark surfaces */
+  --color-ink-soft: #2e3850; /* hover / raised state on ink surfaces */
+  --color-lime: #d0e66b; /* Electric Lime: buttons, highlights, active states */
+  --color-lime-dark: #bfd655; /* hover state for lime buttons */
+  --color-ivory: #f4f5ef; /* Soft Ivory: page and panel backgrounds */
 }
 
 :root {
-  --background: #E2E8F0;
-  --foreground: #20283B;
-
-  --emerald-primary: #CCFF00;
-  --emerald-dark: #CCFF00;
+  --background: #f4f5ef;
+  --foreground: #20283b;
 }
 
 body {
@@ -24,4 +28,130 @@ body {
 
 .font-handwriting {
   font-family: var(--font-handwriting);
+}
+
+/* Public site (non-admin) pages */
+.site ::selection {
+  background-color: var(--color-lime);
+  color: var(--color-ink);
+}
+
+/* Lime highlighter stroke behind a word, readable on light backgrounds */
+.lime-mark {
+  background-image: linear-gradient(
+    transparent 58%,
+    var(--color-lime) 58%,
+    var(--color-lime) 92%,
+    transparent 92%
+  );
+  padding: 0 0.15em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Subtle dotted grid used behind banner sections */
+.dot-grid {
+  background-image: radial-gradient(
+    rgba(32, 40, 59, 0.09) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+}
+
+/* ---------- Hero ---------- */
+
+/* Entrance: content rises gently into place (skipped for reduced motion) */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Chart line draws itself once (paths use pathLength="1") */
+@keyframes hero-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Area under the chart line fades in after the line */
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.hero-rise {
+  animation: hero-rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
+
+.hero-draw {
+  stroke-dasharray: 1;
+  animation: hero-draw 1.6s cubic-bezier(0.45, 0, 0.2, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
+
+.hero-fade {
+  animation: hero-fade 0.8s ease-out both;
+  animation-delay: var(--delay, 0ms);
+}
+
+/* ---------- Testimonials carousel ---------- */
+
+/* Progress bar fills over one slide; its animationend advances the carousel */
+@keyframes slide-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* New quote fades and slides in */
+@keyframes quote-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-progress {
+  transform-origin: left;
+  animation: slide-progress var(--slide-duration, 6s) linear both;
+}
+
+.quote-in {
+  animation: quote-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise,
+  .hero-draw,
+  .hero-fade,
+  .quote-in {
+    animation: none;
+  }
+
+  /* No auto-rotation: the bar simply shows as full */
+  .slide-progress {
+    animation: none;
+    transform: scaleX(1);
+  }
 }

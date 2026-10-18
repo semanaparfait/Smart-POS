@@ -1,152 +1,107 @@
 import Image from "next/image";
-import { ArrowRight, Workflow } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, ClipboardList, Rocket, Settings } from "lucide-react";
+
+const steps = [
+  {
+    number: "01",
+    icon: ClipboardList,
+    title: "Request installation",
+    description: "Fill out a simple form with your business details. No account needed.",
+  },
+  {
+    number: "02",
+    icon: Settings,
+    title: "Setup & configuration",
+    description: "We configure your system, devices and settings.",
+  },
+  {
+    number: "03",
+    icon: Rocket,
+    title: "Start selling",
+    description: "We train your team and you start managing your business.",
+  },
+];
 
 export default function HowItWorks() {
-  const steps = [
-    {
-      number: "1",
-      // SVG path matching the exact outlined POS terminal/card scanner icon
-      icon: (
-        <svg
-          className="h-5 w-5 text-emerald-800"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect width="14" height="20" x="5" y="2" rx="2" />
-          <path d="M9 6h6" />
-          <path d="M12 18h.01" />
-          <path d="M9 10h6" />
-        </svg>
-      ),
-      title: "Request Installation",
-      description: "Fill out a simple form with your business details.",
-      hasArrow: true,
-    },
-    {
-      number: "2",
-      // SVG path matching the gear / configuration icon
-      icon: (
-        <svg
-          className="h-5 w-5 text-emerald-800"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-      ),
-      title: "Setup & Configuration",
-      description: "We configure your system, devices and settings.",
-      hasArrow: true,
-    },
-    {
-      number: "3",
-      // SVG path matching the rocket launching icon
-      icon: (
-        <svg
-          className="h-5 w-5 text-emerald-800"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
-          <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
-          <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
-          <path d="M12 9v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
-        </svg>
-      ),
-      title: "Start Selling",
-      description: "Train your team and start managing your business.",
-      hasArrow: false,
-    },
-  ];
-
   return (
-    <section
-      id="how-it-works"
-      className=" bg-green-50 border-t border-slate-100"
-    >
+    <section id="how-it-works" aria-labelledby="how-heading" className="scroll-mt-20 bg-ink py-20 text-white lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-left mb-12">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-[#e6f4ed] px-3.5 py-1.5 text-xs font-semibold text-[#047857] mb-4">
-            <Workflow className="h-3.5 w-3.5 text-[#00a66c]" />
-            <span>HOW IT WORKS</span>
+
+        {/* Header */}
+        <div className="flex flex-col gap-4 border-b border-white/15 pb-10 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.28em] text-white/60 sm:text-xs">
+              <span className="h-2 w-2 bg-lime" aria-hidden="true" />
+              How it works
+            </p>
+            <h2
+              id="how-heading"
+              className="mt-5 text-[clamp(2rem,4vw,3.25rem)] font-extrabold leading-[1.05] tracking-[-0.03em]"
+            >
+              Up and running
+              <br />
+              in three steps.
+            </h2>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Get Started in 3 Simple Steps
-          </h2>
-          <p className="mt-3 text-base sm:text-lg text-slate-600">
-            Setting up SmartPOS is quick and easy.
-          </p>
+          <p className="text-base text-white/60 sm:text-right sm:text-lg">Setting up SmartPOS is quick and easy.</p>
         </div>
 
-        {/* Content Grid: Left Steps, Right Staff Image */}
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
-          {/* Left Column: Three steps */}
+        <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-10">
+
+          {/* Steps */}
           <div className="lg:col-span-7">
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-6">
-              {steps.map((step) => (
-                <div
-                  key={step.number}
-                  className="relative flex flex-col items-start"
-                >
-                  {/* Top Row: Number Badge, Icon, and Connector Arrow */}
-                  <div className="mb-5 flex w-full items-center gap-3">
-                    {/* Dark Green Circle Badge */}
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-800 text-xs font-bold text-white shadow-sm">
-                      {step.number}
-                    </div>
-
-                    {/* Step Icon */}
-                    <div className="flex items-center justify-center">
-                      {step.icon}
-                    </div>
-
-                    {/* Connector line with Arrow pointing to next step */}
-                    {step.hasArrow && (
-                      <div className="hidden sm:flex flex-1 items-center justify-end pl-2">
-                        <div className="w-full border-b border-dashed border-slate-300 mr-2" />
-                        <ArrowRight className="h-4 w-4 text-emerald-600 shrink-0" />
-                      </div>
-                    )}
+            <ol className="divide-y divide-white/10 border-y border-white/10">
+              {steps.map(({ number, icon: Icon, title, description }) => (
+                <li key={number} className="group flex gap-6 py-7 sm:gap-8">
+                  <span className="w-12 shrink-0 text-3xl font-extrabold tabular-nums text-white/20 transition-colors group-hover:text-lime sm:text-4xl">
+                    {number}
+                  </span>
+                  <div className="flex-1">
+                    <h3 className="flex items-center gap-3 text-xl font-bold">
+                      {title}
+                      <Icon className="h-5 w-5 text-lime" aria-hidden="true" />
+                    </h3>
+                    <p className="mt-2 max-w-md text-white/60">{description}</p>
                   </div>
-
-                  {/* Title & Description */}
-                  <h3 className="text-sm font-bold text-slate-900 leading-snug">
-                    {step.title}
-                  </h3>
-                  <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                    {step.description}
-                  </p>
-                </div>
+                </li>
               ))}
+            </ol>
+
+            <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link
+                href="/request-installation"
+                className="group inline-flex items-center justify-center gap-2 rounded-md bg-lime px-6 py-3.5 text-sm font-bold text-ink transition-colors hover:bg-lime-dark"
+              >
+                Request installation
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+              </Link>
+              <Link
+                href="/contact"
+                className="inline-flex items-center justify-center rounded-md px-6 py-3.5 text-sm font-bold text-white ring-1 ring-inset ring-white/20 transition-colors hover:bg-white/5"
+              >
+                Talk to our team
+              </Link>
             </div>
           </div>
 
-          {/* Right Column: Staff photo */}
-          <div className="relative flex justify-center lg:col-span-5 lg:justify-end">
-            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border-4 border-white shadow-2xl">
+          {/* Photo */}
+          <figure className="lg:col-span-5">
+            <div className="relative overflow-hidden rounded-xl">
               <Image
                 src="/images/step-woman.png"
-                alt="SmartPOS customer support and installation specialist"
-                width={600}
-                height={450}
-                className="h-auto w-full object-cover"
+                alt="A café owner standing at her counter next to a SmartPOS terminal"
+                width={1200}
+                height={896}
+                sizes="(min-width: 1024px) 40vw, 100vw"
+                className="h-full w-full object-cover"
               />
             </div>
-          </div>
+            <figcaption className="mt-3 flex items-center gap-2 text-xs text-white/45">
+              <span className="h-px w-6 bg-lime" aria-hidden="true" />
+              From request to first sale, our team sets everything up.
+            </figcaption>
+          </figure>
         </div>
       </div>
     </section>

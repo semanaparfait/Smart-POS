@@ -1,81 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { ArrowRight, Menu, X } from "lucide-react";
 import logo from "@/public/smartpos_logo.png"
+
+const INSTALL_HREF = "/request-installation";
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
   const isJobsPage = pathname?.includes("/jobs");
 
+  // Close the mobile menu with Escape
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setIsOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen]);
+
+  // Section links are absolute ("/#…") so they work from every page
   const navLinks = [
     { name: "Home", href: "/", active: pathname === "/" },
-    { name: "Features", href: isJobsPage ? "/#features" : "#features", active: false },
-    { name: "Industries", href: isJobsPage ? "/#industries" : "#industries", active: false },
-    { name: "Pricing", href: isJobsPage ? "/#pricing" : "#pricing", active: false },
-    { name: "About", href: isJobsPage ? "/#about" : "#about", active: false },
+    { name: "Features", href: "/#features", active: false },
+    { name: "Industries", href: "/#industries", active: false },
+    { name: "Pricing", href: "/#pricing", active: false },
     { name: "Jobs", href: "/pages/jobs", active: Boolean(isJobsPage) },
-    { name: "Contact", href: isJobsPage ? "/#contact" : "#contact", active: false },
+    { name: "Contact", href: "/contact", active: pathname === "/contact" },
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 h-20">
+    <header className="site sticky top-0 z-50 w-full border-b border-ink/10 bg-white/85 backdrop-blur-md">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Logo */}
-        <Link href="/" className="">
-          <Image src={logo} alt="Logo" className="w-32" />
-
+        <Link href="/" className="shrink-0">
+          <Image src={logo} alt="SmartPOS" className="w-32" priority />
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+        <nav aria-label="Main" className="hidden lg:flex items-center gap-1 rounded-full bg-ivory p-1.5">
           {navLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
-              className={`relative px-4 py-2 text-sm font-semibold transition-colors duration-150 ${
+              aria-current={link.active ? "page" : undefined}
+              className={`rounded-full px-3.5 xl:px-4 py-2 text-sm font-semibold transition-colors duration-150 ${
                 link.active
-                  ? "text-(--emerald-primary)"
-                  : "text-(--foreground) hover:text-(--foreground)/10"
+                  ? "bg-ink text-lime shadow-sm"
+                  : "text-ink/70 hover:bg-white hover:text-ink"
               }`}
             >
               {link.name}
-              {link.active && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-1 bg-(--emerald-primary) rounded-full" />
-              )}
             </Link>
           ))}
         </nav>
 
         {/* Desktop Action Buttons */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-2 xl:gap-3">
           <Link
             href="/pages/Login"
-            className="text-sm font-semibold text-slate-700 hover:text-[#00a66c] transition-colors"
+            className="rounded-full px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-ivory"
           >
             Login
           </Link>
           <Link
-            href="#request-installation"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold  bg-(--emerald-primary) hover:bg-(--emerald-dark) shadow-sm hover:shadow-md transition-all active:scale-95"
+            href={INSTALL_HREF}
+            className="group inline-flex items-center justify-center gap-2 rounded-full bg-lime px-5 py-2.5 text-sm font-bold text-ink shadow-sm transition-all hover:bg-lime-dark hover:shadow-md active:scale-95"
           >
-            <span>Request Installation</span>
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M14 5l7 7m0 0l-7 7m7-7H3"
-              />
-            </svg>
+            <span className="hidden xl:inline">Request Installation</span>
+            <span className="xl:hidden">Get Started</span>
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
 
@@ -83,68 +81,55 @@ export default function Navbar() {
         <button
           onClick={() => setIsOpen(!isOpen)}
           type="button"
-          aria-label="Toggle Navigation Menu"
-          className="md:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg focus:outline-none"
+          aria-label={isOpen ? "Close menu" : "Open menu"}
+          aria-expanded={isOpen}
+          aria-controls="mobile-menu"
+          className="lg:hidden flex h-10 w-10 items-center justify-center rounded-xl bg-ivory text-ink transition-colors hover:bg-ink hover:text-lime"
         >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            {isOpen ? (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            ) : (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            )}
-          </svg>
+          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
       {/* Mobile Drawer */}
       {isOpen && (
-        <div className="md:hidden border-b border-slate-100 bg-white px-4 py-4 space-y-3">
+        <nav
+          id="mobile-menu"
+          aria-label="Mobile"
+          className="lg:hidden border-t border-ink/10 bg-white px-4 py-4 space-y-1 shadow-lg sm:px-6"
+        >
           {navLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
+              aria-current={link.active ? "page" : undefined}
               onClick={() => setIsOpen(false)}
-              className={`block px-3 py-2 rounded-lg text-base font-medium ${
+              className={`block rounded-xl px-4 py-2.5 text-base font-semibold ${
                 link.active
-                  ? "text-(--emerald-primary) bg-emerald-50 font-bold"
-                  : "text-(--foreground) hover:bg-(--foreground)/10"
+                  ? "bg-ink text-lime"
+                  : "text-ink hover:bg-ivory"
               }`}
             >
               {link.name}
             </Link>
           ))}
-          <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+          <div className="mt-3 flex flex-col gap-2 border-t border-ink/10 pt-4 sm:flex-row">
             <Link
               href="/pages/Login"
               onClick={() => setIsOpen(false)}
-              className="w-full text-center py-2.5 rounded-lg border border-slate-200 font-semibold text-slate-700 hover:bg-slate-50"
+              className="w-full rounded-full border border-ink/15 py-2.5 text-center font-semibold text-ink hover:bg-ivory"
             >
               Login
             </Link>
             <Link
-              href="#request-installation"
+              href={INSTALL_HREF}
               onClick={() => setIsOpen(false)}
-              className="w-full text-center py-2.5 rounded-full bg-(--emerald-primary) text-white font-semibold shadow-sm"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-lime py-2.5 text-center font-bold text-ink shadow-sm hover:bg-lime-dark"
             >
-              Request Installation →
+              Request Installation
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-        </div>
+        </nav>
       )}
     </header>
   );

@@ -1,19 +1,25 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
+  BarChart3,
   Eye,
   EyeOff,
   LockKeyhole,
   Mail,
+  Package,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 import useAuthStore from "@/stores/auth/authstore";
 import toast from "react-hot-toast";
+import logo from "@/public/smartpos_logo.png";
+import logoLight from "@/public/footer_logo.png";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -53,47 +59,52 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
   }
 };
 
-  return (
-    <main className="min-h-screen bg-[#f4f8f5] px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-6xl overflow-hidden rounded-[2rem] bg-white shadow-[0_24px_80px_rgba(5,24,18,0.12)] lg:grid-cols-[0.92fr_1.08fr]">
-        <section className="relative hidden overflow-hidden bg-[#06251b] p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-14">
-          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border-[32px] border-emerald-400/10" />
-          <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-[#00a66c]/15 blur-2xl" />
+  const highlights = [
+    { icon: BarChart3, label: "Real-time sales & reports" },
+    { icon: Package, label: "Inventory with low-stock alerts" },
+    { icon: Users, label: "Staff roles & permissions" },
+  ];
 
-          <Link
-            href="/"
-            className="relative flex items-center gap-2.5 text-xl font-extrabold tracking-tight"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#00a66c] shadow-lg shadow-emerald-950/40">
-              <svg
-                className="h-6 w-6 fill-current"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M12 2 3 7v10l9 5 9-5V7l-9-5Zm0 2.24 6.75 3.75v7.5L12 19.24l-6.75-3.75v-7.5L12 4.24ZM12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
-              </svg>
-            </span>
-            Smart<span className="text-[#54d6a3]">POS</span>
+  return (
+    <main className="site min-h-screen bg-ivory px-4 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-6xl overflow-hidden rounded-4xl bg-white shadow-[0_24px_80px_rgba(32,40,59,0.14)] lg:grid-cols-[0.92fr_1.08fr]">
+        <section className="relative hidden overflow-hidden bg-ink p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-14">
+          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border-32 border-lime/10" />
+          <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-lime/15 blur-2xl" />
+
+          <Link href="/" className="relative">
+            <Image src={logoLight} alt="SmartPOS" className="w-40" priority />
           </Link>
 
           <div className="relative max-w-md">
-            <p className="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-[#54d6a3]">
+            <p className="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-lime">
               Welcome back
             </p>
             <h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight xl:text-5xl">
-              Run your business with clarity.
+              Run your business with <span className="text-lime">clarity.</span>
             </h1>
-            <p className="mt-6 max-w-sm text-base leading-7 text-emerald-100/70">
+            <p className="mt-6 max-w-sm text-base leading-7 text-white/65">
               Keep every sale, shift, and decision moving in the right direction
               from one simple dashboard.
             </p>
+
+            <ul className="mt-10 space-y-3">
+              {highlights.map(({ icon: Icon, label }) => (
+                <li
+                  key={label}
+                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white/85"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-lime text-ink">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  {label}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <div className="relative flex items-center gap-3 text-sm text-emerald-100/70">
-            <ShieldCheck
-              className="h-5 w-5 text-[#54d6a3]"
-              aria-hidden="true"
-            />
+          <div className="relative flex items-center gap-3 text-sm text-white/60">
+            <ShieldCheck className="h-5 w-5 text-lime" aria-hidden="true" />
             Secure access for your team
           </div>
         </section>
@@ -102,36 +113,24 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
           <div className="w-full max-w-md">
             <Link
               href="/"
-              className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-[#008f5d]"
+              className="mb-8 inline-flex items-center gap-2 rounded-full bg-ivory px-4 py-2 text-sm font-semibold text-ink/70 transition hover:bg-ink hover:text-lime"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Back to home
             </Link>
 
-            <Link
-              href="/"
-              className="mb-12 flex items-center gap-2 text-lg font-extrabold tracking-tight text-slate-900 lg:hidden"
-            >
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00a66c] text-white">
-                <svg
-                  className="h-5 w-5 fill-current"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path d="M12 2 3 7v10l9 5 9-5V7l-9-5Zm0 2.24 6.75 3.75v7.5L12 19.24l-6.75-3.75v-7.5L12 4.24ZM12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
-                </svg>
-              </span>
-              Smart<span className="text-[#00a66c]">POS</span>
+            <Link href="/" className="mb-10 block lg:hidden">
+              <Image src={logo} alt="SmartPOS" className="w-36" priority />
             </Link>
 
             <div className="mb-9">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#00a66c]">
+              <span className="mb-4 inline-block rounded-full bg-lime px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-ink">
                 Sign in
-              </p>
-              <h2 className="text-3xl font-extrabold tracking-tight text-slate-950">
+              </span>
+              <h2 className="text-3xl font-extrabold tracking-tight text-ink">
                 Good to see you again.
               </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-500">
+              <p className="mt-3 text-sm leading-6 text-ink/60">
                 Enter your details to access your SmartPOS workspace.
               </p>
             </div>
@@ -140,13 +139,13 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
               <div>
                 <label
                   htmlFor="email"
-                  className="mb-2 block text-sm font-semibold text-slate-700"
+                  className="mb-2 block text-sm font-semibold text-ink"
                 >
                   Email address
                 </label>
                 <div className="relative">
                   <Mail
-                    className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400"
+                    className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-ink/40"
                     aria-hidden="true"
                   />
                   <input
@@ -158,7 +157,7 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@company.com"
-                    className="h-13 w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#00a66c] focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                    className="h-13 w-full rounded-xl border border-ink/15 bg-ivory/60 pl-11 pr-4 text-sm text-ink outline-none transition placeholder:text-ink/40 focus:border-ink focus:bg-white focus:ring-4 focus:ring-lime/40"
                   />
                 </div>
               </div>
@@ -167,20 +166,20 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
                 <div className="mb-2 flex items-center justify-between">
                   <label
                     htmlFor="password"
-                    className="text-sm font-semibold text-slate-700"
+                    className="text-sm font-semibold text-ink"
                   >
                     Password
                   </label>
                   <Link
                     href="#forgot-password"
-                    className="text-xs font-bold text-[#008f5d] transition hover:text-[#006b46]"
+                    className="text-xs font-bold text-ink underline decoration-lime decoration-2 underline-offset-4 transition hover:decoration-ink"
                   >
                     Forgot password?
                   </Link>
                 </div>
                 <div className="relative">
                   <LockKeyhole
-                    className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400"
+                    className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-ink/40"
                     aria-hidden="true"
                   />
                   <input
@@ -192,7 +191,7 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="h-13 w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-11 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#00a66c] focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                    className="h-13 w-full rounded-xl border border-ink/15 bg-ivory/60 pl-11 pr-12 text-sm text-ink outline-none transition placeholder:text-ink/40 focus:border-ink focus:bg-white focus:ring-4 focus:ring-lime/40"
                   />
                   <button
                     type="button"
@@ -200,22 +199,22 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
-                    className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-ink/40 transition hover:bg-ivory hover:text-ink"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-[18px] w-[18px]" />
+                      <EyeOff className="h-4.5 w-4.5" />
                     ) : (
-                      <Eye className="h-[18px] w-[18px]" />
+                      <Eye className="h-4.5 w-4.5" />
                     )}
                   </button>
                 </div>
               </div>
 
-              <label className="flex items-center gap-2.5 text-sm text-slate-500">
+              <label className="flex items-center gap-2.5 text-sm text-ink/60">
                 <input
                   type="checkbox"
                   name="remember"
-                  className="h-4 w-4 rounded border-slate-300 accent-[#00a66c]"
+                  className="h-4 w-4 rounded border-ink/30 accent-ink"
                 />
                 Keep me signed in
               </label>
@@ -223,21 +222,21 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="group flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-[#00a66c] text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-[#008f5d] hover:shadow-xl hover:shadow-emerald-600/25 active:scale-[0.99] disabled:opacity-60"
+                className="group flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-ink text-sm font-bold text-white shadow-lg shadow-ink/20 transition hover:bg-ink-soft hover:shadow-xl active:scale-[0.99] disabled:opacity-60"
               >
                 {loading ? "Signing in..." : "Sign in"}
                 <ArrowRight
-                  className="h-4 w-4 transition-transform group-hover:translate-x-1"
+                  className="h-4 w-4 text-lime transition-transform group-hover:translate-x-1"
                   aria-hidden="true"
                 />
               </button>
             </form>
 
-            <p className="mt-8 text-center text-sm text-slate-500">
+            <p className="mt-8 text-center text-sm text-ink/60">
               Need an account?{" "}
               <Link
-                href="#request-installation"
-                className="font-bold text-[#008f5d] hover:text-[#006b46]"
+                href="/contact"
+                className="font-bold text-ink underline decoration-lime decoration-2 underline-offset-4 hover:decoration-ink"
               >
                 Talk to our team
               </Link>

@@ -1,31 +1,32 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { JOBS_DATA, JobOffer } from "@/app/data/jobs";
+import { fieldClass, labelClass } from "@/app/components/forms";
 import {
-    Search,
-    MapPin,
-    Briefcase,
-    Heart,
-    Clock,
-    X,
-    Upload,
-    Layers,
-    Check,
-    TrendingUp,
-    Award,
-    DollarSign,
     ArrowRight,
-    ExternalLink,
+    ArrowUpRight,
+    Clock,
+    Heart,
+    MapPin,
+    Search,
+    Upload,
+    X,
 } from "lucide-react";
+
+const JOB_TYPES = ["All", "Full Time", "Part Time", "Freelance", "Contract"] as const;
+type TypeFilter = (typeof JOB_TYPES)[number];
+
+const city = (location: string) => location.split(",")[0].trim();
 
 export default function JobsPage() {
     const [keyword, setKeyword] = useState("");
-    const [locationInput, setLocationInput] = useState("");
+    const [locationFilter, setLocationFilter] = useState("All");
+    const [typeFilter, setTypeFilter] = useState<TypeFilter>("All");
 
     const [jobs, setJobs] = useState<JobOffer[]>(JOBS_DATA);
     const [applyModalJob, setApplyModalJob] = useState<JobOffer | null>(null);
@@ -38,6 +39,15 @@ export default function JobsPage() {
     const [applicantResume, setApplicantResume] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Figures shown in the header are derived from the real listings
+    const cities = useMemo(() => Array.from(new Set(JOBS_DATA.map((j) => city(j.location)))), []);
+    const departments = useMemo(() => new Set(JOBS_DATA.map((j) => j.department)).size, []);
+    const typeCounts = useMemo(() => {
+        const counts: Record<string, number> = { All: JOBS_DATA.length };
+        JOBS_DATA.forEach((j) => (counts[j.type] = (counts[j.type] ?? 0) + 1));
+        return counts;
+    }, []);
+
     const toggleFavorite = (id: string) => {
         setJobs((prev) =>
             prev.map((job) =>
@@ -47,19 +57,31 @@ export default function JobsPage() {
     };
 
     const filteredJobs = useMemo(() => {
+        const kw = keyword.toLowerCase();
         return jobs.filter((job) => {
             const matchesKeyword =
-                job.title.toLowerCase().includes(keyword.toLowerCase()) ||
-                job.department.toLowerCase().includes(keyword.toLowerCase()) ||
-                job.summary.toLowerCase().includes(keyword.toLowerCase());
-
-            const matchesLoc =
-                locationInput === "" ||
-                job.location.toLowerCase().includes(locationInput.toLowerCase());
-
-            return matchesKeyword && matchesLoc;
+                job.title.toLowerCase().includes(kw) ||
+                job.department.toLowerCase().includes(kw) ||
+                job.summary.toLowerCase().includes(kw);
+            const matchesLoc = locationFilter === "All" || city(job.location) === locationFilter;
+            const matchesType = typeFilter === "All" || job.type === typeFilter;
+            return matchesKeyword && matchesLoc && matchesType;
         });
-    }, [jobs, keyword, locationInput]);
+    }, [jobs, keyword, locationFilter, typeFilter]);
+
+    const resetFilters = () => {
+        setKeyword("");
+        setLocationFilter("All");
+        setTypeFilter("All");
+    };
+
+    // Close the apply modal with Escape
+    useEffect(() => {
+        if (!applyModalJob) return;
+        const onKey = (e: KeyboardEvent) => e.key === "Escape" && setApplyModalJob(null);
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [applyModalJob]);
 
     const handleApplySubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -84,312 +106,283 @@ export default function JobsPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-[#F8FAF8] text-slate-900 font-sans">
+        <div className="site min-h-screen flex flex-col bg-ivory text-ink font-sans">
             <Navbar />
 
-            {/* Hero Section with Laptop Image Overlay & Curved Arc Bottom */}
-            <section className="relative bg-[#0e1726] text-white pt-20 pb-36 px-4 sm:px-6 lg:px-8 overflow-hidden">
-                {/* Background Image of Laptop & Office */}
-                <div className="absolute inset-0 z-0">
-                    <img
-                        src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1920&q=80"
-                        alt="Sales Agent Presentation"
-                        className="w-full h-full object-cover object-center opacity-25"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-b from-[#0e1726]/90 via-[#0e1726]/85 to-[#0e1726]" />
-                </div>
-
-
-                <div className="relative z-10 mx-auto max-w-4xl text-center space-y-4">
-
-
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
-                        Find Your Next <br />
-                        <span className="text-[#CCFF00]">Opportunity at SmartPOS</span>
-                    </h1>
-                    <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto">
-                        Discover career opportunities at SmartPOS Rwanda and grow with us in technology, sales, marketing, and more.
-                    </p>
-
-                    {/* Job Search Card */}
-                    <div className="pt-6 max-w-3xl mx-auto">
-                        <div className="bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-2xl border border-white/40 text-slate-800 text-left">
-                            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-
-                                {/* Keyword Search */}
-                                <div className="md:col-span-5 space-y-1 px-3 py-1">
-                                    <label className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">
-                                        Job Title / Keyword
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        value={keyword}
-                                        onChange={(e) => setKeyword(e.target.value)}
-                                        placeholder="e.g. Developer, Sales, Marketing"
-                                        className="w-full text-sm font-semibold text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none"
-                                    />
-                                </div>
-
-                                {/* Divider */}
-                                <div className="hidden md:block md:col-span-1 border-r border-slate-200 h-8 mx-auto" />
-
-                                {/* Location Search */}
-                                <div className="md:col-span-4 space-y-1 px-3 py-1">
-                                    <label className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">
-                                        Location in Rwanda
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        value={locationInput}
-                                        onChange={(e) => setLocationInput(e.target.value)}
-                                        placeholder="Kigali, Huye, Musanze..."
-                                        className="w-full text-sm font-semibold text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none"
-                                    />
-                                </div>
-
-                                {/* Find Jobs Button */}
-                                <div className="md:col-span-2">
-                                    <button
-                                        onClick={() => {
-                                            const element = document.getElementById("jobs-list-section");
-
-                                            if (element) {
-                                                element.scrollIntoView({ behavior: "smooth" });
-                                            }
-                                        }}
-                                        className="w-full py-3.5 px-4 rounded-xl bg-black hover:bg-slate-900 text-white font-extrabold text-xs tracking-wider uppercase shadow-md transition-all flex items-center justify-center gap-1.5"
-                                    >
-                                        <span>Find Jobs</span>
-                                        <Search className="w-3.5 h-3.5 text-[#CCFF00]" />
-                                    </button>
-                                </div>
-
-                            </div>
+            <main className="flex-1">
+                {/* ===== Header ===== */}
+                <section className="mx-auto max-w-7xl px-4 pt-14 sm:px-6 sm:pt-20 lg:px-8">
+                    <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-end">
+                        <div className="lg:col-span-7">
+                            <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.28em] text-ink/60 sm:text-xs">
+                                <span className="h-2 w-2 bg-lime ring-1 ring-ink/20" aria-hidden="true" />
+                                Careers at SmartPOS
+                            </p>
+                            <h1 className="mt-5 text-[clamp(2.5rem,5.5vw,4.5rem)] font-extrabold leading-[1.02] tracking-[-0.035em]">
+                                Grow with us.
+                                <br />
+                                <span className="underline decoration-lime decoration-[0.14em] underline-offset-[0.12em] [text-decoration-skip-ink:none]">
+                                    Help businesses
+                                </span>{" "}
+                                thrive.
+                            </h1>
+                            <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink/70">
+                                Join SmartPOS Rwanda and help restaurants, shops, hotels and pharmacies run
+                                smarter. Explore our open roles in sales and business development.
+                            </p>
                         </div>
 
-                        {/* Job Categories */}
-                        <div className="mt-4 text-xs text-slate-300 font-medium leading-6">
-                            Explore Careers:{" "}
-                            <span className="text-white font-semibold">
-                                Technology, Sales, Marketing, Customer Support, Business Development
-                            </span>
-                        </div>
-
-                        <div className="mt-2 text-xs text-slate-400">
-                            <MapPin className="w-3.5 h-3.5 inline mr-1 text-[#CCFF00]" />
-                            Opportunities across Rwanda
-                        </div>
+                        {/* Summary card (computed from the listings) */}
+                        <dl className="grid grid-cols-3 divide-x divide-white/10 rounded-xl bg-ink text-white lg:col-span-5">
+                            {[
+                                { label: "Open roles", value: JOBS_DATA.length },
+                                { label: "Cities", value: cities.length },
+                                { label: "Teams", value: departments },
+                            ].map((s) => (
+                                <div key={s.label} className="px-5 py-6 sm:px-7 sm:py-8">
+                                    <dt className="text-xs font-semibold text-white/55">{s.label}</dt>
+                                    <dd className="mt-2 text-4xl font-extrabold tabular-nums tracking-tight text-lime sm:text-5xl">
+                                        {String(s.value).padStart(2, "0")}
+                                    </dd>
+                                </div>
+                            ))}
+                        </dl>
                     </div>
-                </div>
-                ```
 
-                {/* Bottom Curved Arc SVG Cutout */}
-                <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none pointer-events-none z-10">
-                    <svg
-                        viewBox="0 0 1200 120"
-                        preserveAspectRatio="none"
-                        className="relative block w-full h-16 sm:h-20 text-[#F8FAF8] fill-current"
-                    >
-                        <path d="M0,0 Q600,120 1200,0 L1200,120 L0,120 Z" />
-                    </svg>
-                </div>
-            </section>
-
-            {/* Jobs Section (Directly after Hero) */}
-            <section id="jobs-list-section" className="py-16 px-4 sm:px-6 lg:px-8 mx-auto max-w-7xl w-full">
-                <div className="text-center max-w-2xl mx-auto mb-12">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                        Current Openings
-                    </span>
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
-                        Open Sales Agent Positions
-                    </h2>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-2 font-normal leading-relaxed">
-                        Click on any position to view complete job details or submit an application.
-                    </p>
-                </div>
-
-                {/* 2-Column Tinted Job Cards Grid */}
-                {filteredJobs.length === 0 ? (
-                    <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 max-w-md mx-auto my-8">
-                        <Search className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                        <h3 className="text-base font-bold text-slate-800">No Sales Roles Found</h3>
-                        <p className="text-xs text-slate-400 mt-1">Try resetting your search filters.</p>
+                    {/* Search bar */}
+                    <div className="mt-12 grid grid-cols-1 gap-2 rounded-xl bg-white p-2 ring-1 ring-inset ring-ink/10 sm:grid-cols-12">
+                        <label className="flex items-center gap-3 rounded-md px-4 py-3 focus-within:bg-ivory sm:col-span-7">
+                            <Search className="h-5 w-5 shrink-0 text-ink/40" aria-hidden="true" />
+                            <span className="sr-only">Search jobs</span>
+                            <input
+                                type="search"
+                                value={keyword}
+                                onChange={(e) => setKeyword(e.target.value)}
+                                placeholder="Search by role or team — e.g. Sales, Business Development"
+                                className="w-full bg-transparent text-sm font-semibold text-ink placeholder:font-normal placeholder:text-ink/40 focus:outline-none"
+                            />
+                        </label>
+                        <label className="flex items-center gap-3 rounded-md px-4 py-3 focus-within:bg-ivory sm:col-span-3 sm:border-l sm:border-ink/10">
+                            <MapPin className="h-5 w-5 shrink-0 text-ink/40" aria-hidden="true" />
+                            <span className="sr-only">Location</span>
+                            <select
+                                value={locationFilter}
+                                onChange={(e) => setLocationFilter(e.target.value)}
+                                className="w-full cursor-pointer bg-transparent text-sm font-semibold text-ink focus:outline-none"
+                            >
+                                <option value="All">All locations</option>
+                                {cities.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                ))}
+                            </select>
+                        </label>
                         <button
-                            onClick={() => {
-                                setKeyword("");
-                                setLocationInput("");
-                            }}
-                            className="mt-4 px-4 py-2 rounded-lg bg-black text-white text-xs font-bold"
+                            type="button"
+                            onClick={() => document.getElementById("open-roles")?.scrollIntoView({ behavior: "smooth" })}
+                            className="inline-flex items-center justify-center gap-2 rounded-md bg-lime px-5 py-3 text-sm font-bold text-ink transition-colors hover:bg-lime-dark sm:col-span-2"
                         >
-                            Reset Filters
+                            Find jobs
                         </button>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {filteredJobs.map((job) => (
-                            <div
-                                key={job.id}
-                                className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-all flex items-start justify-between gap-4 relative group"
-                            >
-                                {/* Left Side: Logo & Details */}
-                                <div className="flex items-start gap-4 flex-1">
-                                    {/* Brand Logo Box */}
-                                    <div
-                                        className={`w-12 h-12 rounded-2xl ${job.companyLogoBg} text-[#CCFF00] flex items-center justify-center font-extrabold text-xl shrink-0 shadow-sm`}
+                </section>
+
+                {/* ===== Listings ===== */}
+                <section id="open-roles" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+                    <div className="flex flex-col gap-5 border-b border-ink/15 pb-6 md:flex-row md:items-end md:justify-between">
+                        <div>
+                            <h2 className="text-2xl font-extrabold tracking-[-0.02em] sm:text-3xl">Open positions</h2>
+                            <p className="mt-1 text-sm text-ink/55" aria-live="polite">
+                                Showing {filteredJobs.length} of {JOBS_DATA.length} roles
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by job type">
+                            {JOB_TYPES.filter((t) => typeCounts[t]).map((t) => {
+                                const selected = typeFilter === t;
+                                return (
+                                    <button
+                                        key={t}
+                                        type="button"
+                                        aria-pressed={selected}
+                                        onClick={() => setTypeFilter(t)}
+                                        className={`rounded-md px-3.5 py-2 text-xs font-bold transition-colors ${
+                                            selected ? "bg-ink text-lime" : "bg-white text-ink/70 ring-1 ring-inset ring-ink/10 hover:text-ink"
+                                        }`}
                                     >
-                                        {job.companyLogoText}
-                                    </div>
+                                        {t}
+                                        <span className={`ml-1.5 tabular-nums ${selected ? "text-white/60" : "text-ink/40"}`}>
+                                            {typeCounts[t]}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
 
-                                    <div className="space-y-1">
-                                        <Link
-                                            href={`/pages/jobs/${job.id}`}
-                                            className="text-base sm:text-lg font-bold text-slate-900 hover:text-emerald-600 transition-colors flex items-center gap-1.5 group/title"
-                                        >
-                                            <span>{job.title}</span>
-                                            <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover/title:text-emerald-600 opacity-0 group-hover/title:opacity-100 transition-opacity" />
-                                        </Link>
+                    {filteredJobs.length === 0 ? (
+                        <div className="py-20 text-center">
+                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-white ring-1 ring-inset ring-ink/10">
+                                <Search className="h-6 w-6 text-ink/40" aria-hidden="true" />
+                            </div>
+                            <h3 className="mt-5 text-lg font-bold">No roles match your search</h3>
+                            <p className="mt-1 text-sm text-ink/55">Try a different keyword or clear the filters.</p>
+                            <button
+                                onClick={resetFilters}
+                                className="mt-6 rounded-md bg-ink px-5 py-2.5 text-sm font-bold text-white hover:bg-ink-soft"
+                            >
+                                Clear filters
+                            </button>
+                        </div>
+                    ) : (
+                        <ul className="divide-y divide-ink/10">
+                            {filteredJobs.map((job, i) => (
+                                <li key={job.id} className="group relative grid grid-cols-1 gap-4 py-7 md:grid-cols-12 md:items-center md:gap-6">
+                                    {/* Hover marker */}
+                                    <span
+                                        aria-hidden="true"
+                                        className="absolute -left-4 top-1/2 hidden h-10 w-1 -translate-y-1/2 bg-lime opacity-0 transition-opacity group-hover:opacity-100 lg:block"
+                                    />
 
-                                        <div className="text-xs font-semibold text-slate-600">
-                                            Via <span className="underline">{job.company}</span>
-                                        </div>
-
-                                        <div className="space-y-1 pt-1.5 text-xs text-slate-500 font-medium">
-                                            <div className="flex items-center gap-1.5">
-                                                <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                                                <span>{job.location}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <Layers className="w-3.5 h-3.5 text-slate-400" />
+                                    {/* Title & meta */}
+                                    <div className="flex items-start gap-4 md:col-span-6">
+                                        <span className="hidden w-8 shrink-0 pt-1 text-xs font-bold tabular-nums text-ink/35 sm:block">
+                                            {String(i + 1).padStart(2, "0")}
+                                        </span>
+                                        <div className="min-w-0">
+                                            <Link
+                                                href={`/pages/jobs/${job.id}`}
+                                                className="text-lg font-extrabold leading-snug tracking-[-0.01em] decoration-lime decoration-[3px] underline-offset-4 hover:underline sm:text-xl"
+                                            >
+                                                {job.title}
+                                            </Link>
+                                            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-ink/60">
                                                 <span>{job.department}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <DollarSign className="w-3.5 h-3.5 text-emerald-600 font-bold" />
-                                                <span className="font-bold text-slate-900">{job.salary}</span>
+                                                <span className="flex items-center gap-1.5">
+                                                    <MapPin className="h-3.5 w-3.5" aria-hidden="true" /> {job.location}
+                                                </span>
+                                                <span className="flex items-center gap-1.5">
+                                                    <Clock className="h-3.5 w-3.5" aria-hidden="true" /> {job.postedAgo}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Right Side: Type Badge, Heart Icon, Posted Time */}
-                                <div className="flex flex-col items-end justify-between self-stretch shrink-0">
-                                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-bold">
-                                        {job.type}
-                                    </span>
+                                    {/* Type & pay */}
+                                    <div className="flex flex-wrap items-center gap-3 sm:pl-12 md:col-span-3 md:flex-col md:items-start md:gap-1.5 md:pl-0">
+                                        <span className="rounded-md bg-lime/50 px-2.5 py-1 text-xs font-bold text-ink">{job.type}</span>
+                                        <span className="text-sm font-semibold text-ink">{job.salary}</span>
+                                    </div>
 
-                                    <div className="flex items-center gap-3 mt-auto">
+                                    {/* Actions */}
+                                    <div className="flex items-center gap-2 sm:pl-12 md:col-span-3 md:justify-end md:pl-0">
                                         <button
                                             onClick={() => toggleFavorite(job.id)}
-                                            className={`p-1.5 rounded-full transition-colors ${job.isLiked ? "text-red-500" : "text-slate-300 hover:text-red-400"
-                                                }`}
-                                            title="Bookmark Job"
+                                            aria-pressed={Boolean(job.isLiked)}
+                                            aria-label={job.isLiked ? `Remove ${job.title} from saved jobs` : `Save ${job.title}`}
+                                            className={`flex h-10 w-10 items-center justify-center rounded-md transition-colors ${
+                                                job.isLiked ? "bg-ink text-lime" : "bg-white text-ink/40 ring-1 ring-inset ring-ink/10 hover:text-ink"
+                                            }`}
                                         >
-                                            <Heart
-                                                className={`w-4 h-4 ${job.isLiked ? "fill-current text-red-500" : ""}`}
-                                            />
+                                            <Heart className={`h-4 w-4 ${job.isLiked ? "fill-current" : ""}`} aria-hidden="true" />
                                         </button>
-
-                                        <div className="flex items-center gap-1 text-[11px] font-medium text-slate-400">
-                                            <Clock className="w-3.5 h-3.5" />
-                                            <span>{job.postedAgo}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 mt-3">
                                         <Link
                                             href={`/pages/jobs/${job.id}`}
-                                            className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-colors"
+                                            className="inline-flex h-10 items-center rounded-md px-4 text-sm font-bold text-ink ring-1 ring-inset ring-ink/15 transition-colors hover:bg-white"
                                         >
                                             Details
                                         </Link>
                                         <button
                                             onClick={() => setApplyModalJob(job)}
-                                            className="px-4 py-1.5 rounded-xl bg-black hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition-all"
+                                            className="group/apply inline-flex h-10 items-center gap-1.5 rounded-md bg-ink px-4 text-sm font-bold text-white transition-colors hover:bg-ink-soft"
                                         >
                                             Apply
+                                            <ArrowRight className="h-4 w-4 text-lime transition-transform group-hover/apply:translate-x-0.5" aria-hidden="true" />
                                         </button>
                                     </div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
+
+                {/* ===== Open application band ===== */}
+                <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
+                    <Link
+                        href="/contact"
+                        className="group flex flex-col gap-6 rounded-xl bg-ink p-8 text-white transition-colors hover:bg-ink-soft sm:flex-row sm:items-center sm:justify-between sm:p-10"
+                    >
+                        <div>
+                            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-lime">Open application</p>
+                            <p className="mt-3 text-2xl font-extrabold leading-tight sm:text-3xl">Don&apos;t see the right role?</p>
+                            <p className="mt-2 text-white/60">Tell us about yourself and how you&apos;d like to help SmartPOS grow.</p>
+                        </div>
+                        <span className="inline-flex shrink-0 items-center gap-2 self-start rounded-md bg-lime px-5 py-3 text-sm font-bold text-ink sm:self-auto">
+                            Get in touch
+                            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+                        </span>
+                    </Link>
+                </section>
+            </main>
+
+            {/* ===== Application modal ===== */}
+            {applyModalJob && (
+                <div
+                    className="fixed inset-0 z-50 flex items-end justify-center bg-ink/70 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+                    onClick={(e) => e.target === e.currentTarget && setApplyModalJob(null)}
+                >
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="apply-title"
+                        className="relative max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-xl bg-white text-ink shadow-2xl sm:rounded-xl"
+                    >
+                        <div className="sticky top-0 z-10 bg-ink px-6 py-6 text-white sm:px-8">
+                            <button
+                                onClick={() => setApplyModalJob(null)}
+                                aria-label="Close"
+                                className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-md text-white/70 ring-1 ring-inset ring-white/15 hover:bg-white/10 hover:text-white"
+                            >
+                                <X className="h-4 w-4" aria-hidden="true" />
+                            </button>
+                            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-lime">Apply</p>
+                            <h3 id="apply-title" className="mt-2 pr-10 text-xl font-extrabold leading-snug">
+                                {applyModalJob.title}
+                            </h3>
+                            <p className="mt-1 text-sm text-white/55">
+                                {applyModalJob.location} · {applyModalJob.type}
+                            </p>
+                        </div>
+
+                        <form onSubmit={handleApplySubmit} className="space-y-5 p-6 sm:p-8">
+                            <div>
+                                <label htmlFor="apply-name" className={labelClass}>Full name *</label>
+                                <input id="apply-name" type="text" required autoComplete="name" value={applicantName}
+                                    onChange={(e) => setApplicantName(e.target.value)} className={fieldClass} />
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                                <div>
+                                    <label htmlFor="apply-email" className={labelClass}>Email *</label>
+                                    <input id="apply-email" type="email" required autoComplete="email" value={applicantEmail}
+                                        onChange={(e) => setApplicantEmail(e.target.value)} className={fieldClass} />
+                                </div>
+                                <div>
+                                    <label htmlFor="apply-phone" className={labelClass}>Phone</label>
+                                    <input id="apply-phone" type="tel" autoComplete="tel" value={applicantPhone}
+                                        onChange={(e) => setApplicantPhone(e.target.value)} placeholder="+250 7XX XXX XXX" className={fieldClass} />
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                )}
-            </section>
-
-            {/* Application Form Modal */}
-            {applyModalJob && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
-                    <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-8 relative text-slate-800">
-                        <button
-                            onClick={() => setApplyModalJob(null)}
-                            className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-700"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-
-                        <h3 className="text-xl font-bold text-slate-900 mb-1">
-                            Apply as Sales Agent: {applyModalJob.title}
-                        </h3>
-                        <p className="text-xs text-slate-500 mb-5">
-                            Please complete your applicant details below.
-                        </p>
-
-                        <form onSubmit={handleApplySubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Full Name *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={applicantName}
-                                    onChange={(e) => setApplicantName(e.target.value)}
-                                    placeholder="John Doe"
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-black"
-                                />
-                            </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Email Address *</label>
-                                <input
-                                    type="email"
-                                    required
-                                    value={applicantEmail}
-                                    onChange={(e) => setApplicantEmail(e.target.value)}
-                                    placeholder="john@example.com"
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-black"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Phone Number</label>
-                                <input
-                                    type="tel"
-                                    value={applicantPhone}
-                                    onChange={(e) => setApplicantPhone(e.target.value)}
-                                    placeholder="+1 (555) 000-0000"
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-black"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">
-                                    Sales Experience / Pitch Note
-                                </label>
-                                <textarea
-                                    rows={3}
-                                    value={applicantExperience}
+                                <label htmlFor="apply-experience" className={labelClass}>Sales experience / pitch note</label>
+                                <textarea id="apply-experience" rows={3} value={applicantExperience}
                                     onChange={(e) => setApplicantExperience(e.target.value)}
-                                    placeholder="Briefly describe your sales background or target merchant territory..."
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-black"
-                                />
+                                    placeholder="Briefly describe your sales background or the area you'd like to cover…"
+                                    className={fieldClass} />
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">
-                                    Resume / CV (PDF, DOCX) *
-                                </label>
-                                <div className="relative border-2 border-dashed border-slate-200 rounded-xl p-4 text-center bg-slate-50">
+                                <span className={labelClass}>Resume / CV (PDF, DOC, DOCX)</span>
+                                <label className="group relative flex cursor-pointer flex-col items-center rounded-md border-2 border-dashed border-ink/15 bg-ivory p-5 text-center transition-colors hover:border-ink focus-within:border-ink">
                                     <input
                                         type="file"
                                         accept=".pdf,.doc,.docx"
@@ -398,31 +391,31 @@ export default function JobsPage() {
                                                 setApplicantResume(e.target.files[0]);
                                             }
                                         }}
-                                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                        className="sr-only"
                                     />
-                                    <Upload className="w-6 h-6 text-slate-400 mx-auto mb-1" />
-                                    {applicantResume ? (
-                                        <span className="text-xs font-bold text-black">{applicantResume.name}</span>
-                                    ) : (
-                                        <span className="text-xs text-slate-600">Click to upload resume</span>
-                                    )}
-                                </div>
+                                    <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white text-ink shadow-sm transition-colors group-hover:bg-lime">
+                                        <Upload className="h-5 w-5" aria-hidden="true" />
+                                    </span>
+                                    <span className="mt-2 text-sm font-semibold">
+                                        {applicantResume ? applicantResume.name : "Click to upload your resume"}
+                                    </span>
+                                </label>
                             </div>
 
-                            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                            <div className="flex items-center justify-end gap-3 border-t border-ink/10 pt-5">
                                 <button
                                     type="button"
                                     onClick={() => setApplyModalJob(null)}
-                                    className="px-4 py-2 rounded-lg border border-slate-200 text-xs font-bold"
+                                    className="rounded-md px-5 py-3 text-sm font-bold text-ink ring-1 ring-inset ring-ink/15 hover:bg-ivory"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="px-5 py-2 rounded-lg bg-black text-white text-xs font-bold hover:bg-slate-900"
+                                    className="inline-flex items-center gap-2 rounded-md bg-lime px-6 py-3 text-sm font-bold text-ink hover:bg-lime-dark disabled:opacity-60"
                                 >
-                                    {isSubmitting ? "Submitting..." : "Submit Application"}
+                                    {isSubmitting ? "Submitting…" : "Submit application"}
                                 </button>
                             </div>
                         </form>

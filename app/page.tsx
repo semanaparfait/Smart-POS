@@ -5,12 +5,13 @@ import Features from './components/Features';
 import HowItWorks from './components/HowItWorks';
 import Pricing from './components/Pricing';
 import Testimonies from './components/Testimonies';
+import Faq from './components/Faq';
 import CtaBanner from './components/CtaBanner';
 import Footer from './components/Footer';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-white px-5">
+    <main className="site min-h-screen bg-white text-ink">
       <Navbar />
       <Hero />
       <Industries />
@@ -18,6 +19,7 @@ export default function Home() {
       <HowItWorks />
       <Pricing />
       <Testimonies />
+      <Faq />
       <CtaBanner />
       <Footer />
     </main>

@@ -1,142 +1,112 @@
-import { Check, Tag } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight, Check } from 'lucide-react';
+
+// TODO: prices are shown in USD as before. Update to RWF if that is what you charge.
+const plans = [
+  {
+    name: 'Starter',
+    subtitle: 'Perfect for small businesses',
+    price: '$29',
+    period: '/month',
+    features: ['1 POS device', 'Basic reports', 'Inventory tracking', 'Email support'],
+    cta: { label: 'Get started', href: '/request-installation?plan=starter' },
+  },
+  {
+    name: 'Business',
+    popular: true,
+    subtitle: 'For growing businesses',
+    price: '$59',
+    period: '/month',
+    features: ['Up to 3 POS devices', 'Advanced reports', 'Employee management', 'Priority support'],
+    cta: { label: 'Get started', href: '/request-installation?plan=business' },
+  },
+  {
+    name: 'Enterprise',
+    subtitle: 'For large businesses',
+    price: 'Custom',
+    period: '',
+    features: ['Multiple locations', 'Full customization', 'Advanced analytics', '24/7 dedicated support'],
+    cta: { label: 'Contact sales', href: '/contact?topic=sales' },
+  },
+];
 
 export default function Pricing() {
-  const plans = [
-    {
-      name: 'Starter',
-      popular: false,
-      subtitle: 'Perfect for small businesses',
-      price: '$29',
-      period: '/month',
-      features: [
-        '1 POS device',
-        'Basic reports',
-        'Inventory tracking',
-        'Email support',
-      ],
-      ctaText: 'Get Started',
-      ctaStyle: 'outline',
-    },
-    {
-      name: 'Business',
-      popular: true,
-      subtitle: 'For growing businesses',
-      price: '$59',
-      period: '/month',
-      features: [
-        'Up to 3 POS devices',
-        'Advanced reports',
-        'Employee management',
-        'Priority support',
-      ],
-      ctaText: 'Get Started',
-      ctaStyle: 'filled',
-    },
-    {
-      name: 'Enterprise',
-      popular: false,
-      subtitle: 'For large businesses',
-      price: 'Custom Pricing',
-      period: '',
-      features: [
-        'Multiple locations',
-        'Full customization',
-        'Advanced analytics',
-        '24/7 dedicated support',
-      ],
-      ctaText: 'Contact Sales',
-      ctaStyle: 'outline',
-    },
-  ];
-
   return (
-    <section id="pricing" className="py-16 lg:py-24 bg-[#f8faf8]">
+    <section id="pricing" aria-labelledby="pricing-heading" className="scroll-mt-20 bg-ivory py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        
-        {/* Section Header */}
-        <div className="text-left mb-12">
 
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Simple & Transparent Pricing
-          </h2>
-          <p className="mt-3 text-base sm:text-lg text-slate-600">
-            Choose the plan that fits your business. No hidden fees.
-          </p>
+        {/* Header */}
+        <div className="flex flex-col gap-4 border-b border-ink/15 pb-10 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.28em] text-ink/60 sm:text-xs">
+              <span className="h-2 w-2 bg-lime ring-1 ring-ink/20" aria-hidden="true" />
+              Pricing
+            </p>
+            <h2
+              id="pricing-heading"
+              className="mt-5 text-[clamp(2rem,4vw,3.25rem)] font-extrabold leading-[1.05] tracking-[-0.03em] text-ink"
+            >
+              Simple, transparent pricing.
+            </h2>
+          </div>
+          <p className="text-base text-ink/60 sm:text-right sm:text-lg">No hidden fees. Choose what fits your business.</p>
         </div>
 
-        {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative flex flex-col justify-between rounded-3xl p-8 bg-white transition-all duration-200 ${
-                plan.popular
-                  ? 'border-2 border-[#00a66c] shadow-xl shadow-emerald-600/10 scale-102'
-                  : 'border border-slate-200/80 shadow-sm hover:shadow-md'
-              }`}
-            >
-              {/* Popular Top Pill Badge */}
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[#00a66c] text-white text-xs font-bold tracking-wide uppercase shadow-sm">
-                  Most Popular
-                </div>
-              )}
-
-              <div>
-                <h3 className="text-2xl font-bold text-slate-900">
-                  {plan.name}
-                </h3>
-                <p className="mt-1 text-xs text-slate-500">
-                  {plan.subtitle}
-                </p>
-
-                {/* Price Display */}
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl sm:text-5xl font-extrabold text-slate-900">
-                    {plan.price}
-                  </span>
-                  {plan.period && (
-                    <span className="text-sm font-medium text-slate-500">
-                      {plan.period}
+        {/* Plans */}
+        <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+          {plans.map((plan) => {
+            const dark = Boolean(plan.popular);
+            return (
+              <div
+                key={plan.name}
+                className={`relative flex flex-col rounded-xl p-8 ${
+                  dark ? 'bg-ink text-white' : 'bg-white text-ink ring-1 ring-inset ring-ink/10'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-extrabold">{plan.name}</h3>
+                  {dark && (
+                    <span className="rounded-md bg-lime px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-ink">
+                      Most popular
                     </span>
                   )}
                 </div>
+                <p className={`mt-1 text-sm ${dark ? 'text-white/60' : 'text-ink/60'}`}>{plan.subtitle}</p>
 
-                {/* Features List */}
-                <ul className="mt-8 space-y-3.5">
+                <div className="mt-8 flex items-baseline gap-1">
+                  <span className={`text-5xl font-extrabold tracking-[-0.03em] ${dark ? 'text-lime' : 'text-ink'}`}>
+                    {plan.price}
+                  </span>
+                  {plan.period && (
+                    <span className={`text-sm font-medium ${dark ? 'text-white/55' : 'text-ink/50'}`}>{plan.period}</span>
+                  )}
+                </div>
+                {!plan.period && <p className="mt-1 text-sm text-ink/50">Tailored to your operations</p>}
+
+                <ul className={`mt-8 flex-1 divide-y border-t ${dark ? 'divide-white/10 border-white/10' : 'divide-ink/10 border-ink/10'}`}>
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-3 text-sm text-slate-700">
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#e6f4ed] text-[#00a66c]">
-                        <Check className="h-3.5 w-3.5 stroke-[3]" />
-                      </div>
-                      <span>{feature}</span>
+                    <li key={feature} className={`flex items-center gap-3 py-3.5 text-sm ${dark ? 'text-white/85' : 'text-ink/80'}`}>
+                      <Check className={`h-4 w-4 shrink-0 ${dark ? 'text-lime' : 'text-ink'}`} strokeWidth={3} aria-hidden="true" />
+                      {feature}
                     </li>
                   ))}
                 </ul>
-              </div>
 
-              {/* Call to Action Button */}
-              <div className="mt-8 pt-6 border-t border-slate-100">
-                {plan.ctaStyle === 'filled' ? (
-                  <a
-                    href="#get-started"
-                    className="w-full inline-flex items-center justify-center py-3 px-6 rounded-full bg-[#00a66c] hover:bg-[#008f5d] text-white font-bold text-sm shadow-md transition-all active:scale-95"
-                  >
-                    {plan.ctaText}
-                  </a>
-                ) : (
-                  <a
-                    href="#get-started"
-                    className="w-full inline-flex items-center justify-center py-3 px-6 rounded-full border border-emerald-300 hover:border-[#00a66c] bg-white text-[#00a66c] hover:bg-emerald-50 font-bold text-sm transition-all"
-                  >
-                    {plan.ctaText}
-                  </a>
-                )}
+                <Link
+                  href={plan.cta.href}
+                  className={`group mt-8 inline-flex items-center justify-center gap-2 rounded-md px-6 py-3.5 text-sm font-bold transition-colors ${
+                    dark
+                      ? 'bg-lime text-ink hover:bg-lime-dark'
+                      : 'text-ink ring-1 ring-inset ring-ink/25 hover:bg-ink hover:text-white'
+                  }`}
+                >
+                  {plan.cta.label}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                </Link>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-
       </div>
     </section>
   );
