@@ -18,7 +18,7 @@ export default function Features() {
   const featuresList = [
     {
       icon: CreditCard,
-      title: 'Sales & Checkout',
+      title: 'Sales & Checkout ',
       description: 'Fast and flexible payment options',
     },
     {
