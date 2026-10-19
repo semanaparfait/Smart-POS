@@ -6,7 +6,7 @@ const steps = [
   {
     number: "01",
     icon: ClipboardList,
-    title: "Request installation",
+    title: "Request installation ",
     description: "Fill out a simple form with your business details. No account needed.",
   },
   {
