@@ -108,15 +108,15 @@ export default function CompaniesPage() {
   if (activeView === "add") {
     return (
       <main className="space-y-6">
-        <header className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <header className="flex flex-col gap-4 border-b border-ink/12 pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-[-0.02em] text-slate-900">Register company</h1>
-            <p className="mt-1 text-sm text-slate-500">Add a new business to the SmartPOS platform.</p>
+            <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink">Register company</h1>
+            <p className="mt-1 text-sm text-ink/60">Add a new business to the SmartPOS platform.</p>
           </div>
           <button
             type="button"
             onClick={() => setActiveView("companies")}
-            className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-50 hover:text-slate-900"
+            className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-ink/80 ring-1 ring-inset ring-ink/12 transition-colors hover:bg-ivory hover:text-ink"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to companies
@@ -138,13 +138,13 @@ export default function CompaniesPage() {
       {/* Header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-[-0.02em] text-slate-900">Companies</h1>
-          <p className="mt-1 text-sm text-slate-500">All businesses registered on SmartPOS.</p>
+          <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink">Companies</h1>
+          <p className="mt-1 text-sm text-ink/60">All businesses registered on SmartPOS.</p>
         </div>
         <button
           type="button"
           onClick={() => setActiveView("add")}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-slate-900/15 transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-lime px-4 py-2.5 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-lime-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2"
         >
           <Plus className="h-4 w-4" />
           Add company
@@ -152,21 +152,21 @@ export default function CompaniesPage() {
       </header>
 
       {/* Summary */}
-      <section className="grid grid-cols-2 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs lg:grid-cols-4">
+      <section className="grid grid-cols-2 overflow-hidden rounded-2xl border border-ink/12 bg-white shadow-xs lg:grid-cols-4">
         {stats.map(({ label, value, icon: Icon }, i) => (
           <div
             key={label}
-            className={`flex items-center justify-between gap-3 p-5 ${i % 2 === 1 ? "border-l border-slate-100" : ""} ${
-              i >= 2 ? "border-t border-slate-100 lg:border-t-0" : ""
+            className={`flex items-center justify-between gap-3 p-5 ${i % 2 === 1 ? "border-l border-ink/6" : ""} ${
+              i >= 2 ? "border-t border-ink/6 lg:border-t-0" : ""
             } ${i === 2 ? "lg:border-l" : ""}`}
           >
             <div>
-              <p className="text-xs font-semibold text-slate-500">{label}</p>
-              <p className="mt-1 text-2xl font-bold tracking-[-0.02em] text-slate-900 tabular-nums">
-                {loadState === "loading" ? <span className="inline-block h-7 w-10 animate-pulse rounded bg-slate-100 align-middle" /> : value}
+              <p className="text-xs font-semibold text-ink/60">{label}</p>
+              <p className="mt-1 text-2xl font-bold tracking-[-0.02em] text-ink tabular-nums">
+                {loadState === "loading" ? <span className="inline-block h-7 w-10 animate-pulse rounded bg-ink/6 align-middle" /> : value}
               </p>
             </div>
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink/6 text-ink/60">
               <Icon className="h-5 w-5" />
             </span>
           </div>
@@ -177,14 +177,14 @@ export default function CompaniesPage() {
       <section className="space-y-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/45" />
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name, code, email, phone or location..."
               aria-label="Search companies"
-              className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
+              className="h-10 w-full rounded-lg border border-ink/12 bg-white pl-9 pr-3 text-sm text-ink outline-none transition placeholder:text-ink/45 hover:border-ink/25 focus:border-ink/40 focus:ring-4 focus:ring-lime/40"
             />
           </div>
 
@@ -194,14 +194,14 @@ export default function CompaniesPage() {
               id="company-sort"
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
-              className="h-10 cursor-pointer rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition hover:border-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
+              className="h-10 cursor-pointer rounded-lg border border-ink/12 bg-white px-3 text-sm font-medium text-ink/80 outline-none transition hover:border-ink/25 focus:border-ink/40 focus:ring-4 focus:ring-lime/40"
             >
               <option value="newest">Newest first</option>
               <option value="oldest">Oldest first</option>
               <option value="name">Name A–Z</option>
             </select>
 
-            <div className="flex h-10 items-center rounded-lg bg-slate-100 p-1" role="group" aria-label="Layout">
+            <div className="flex h-10 items-center rounded-lg bg-ink/6 p-1" role="group" aria-label="Layout">
               {([
                 { key: "grid", icon: LayoutGrid, label: "Grid view" },
                 { key: "list", icon: List, label: "List view" },
@@ -214,7 +214,7 @@ export default function CompaniesPage() {
                   aria-label={label}
                   title={label}
                   className={`flex h-8 w-9 items-center justify-center rounded-md transition-all ${
-                    layout === key ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-700"
+                    layout === key ? "bg-white text-ink shadow-sm" : "text-ink/45 hover:text-ink/80"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -236,14 +236,14 @@ export default function CompaniesPage() {
                 aria-pressed={active}
                 className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
                   active
-                    ? "bg-slate-900 text-white shadow-sm"
-                    : "bg-white text-slate-600 ring-1 ring-inset ring-slate-200 hover:text-slate-900 hover:ring-slate-300"
+                    ? "bg-ink text-lime shadow-sm"
+                    : "bg-white text-ink/70 ring-1 ring-inset ring-ink/12 hover:text-ink hover:ring-ink/25"
                 }`}
               >
                 {chip.label}
                 <span
                   className={`rounded-full px-1.5 text-[11px] tabular-nums ${
-                    active ? "bg-white/15 text-white" : "bg-slate-100 text-slate-500"
+                    active ? "bg-white/15 text-white" : "bg-ink/6 text-ink/60"
                   }`}
                 >
                   {chip.count}
@@ -257,13 +257,13 @@ export default function CompaniesPage() {
       {/* Results */}
       <section aria-live="polite">
         {loadState === "ready" && companies.length > 0 && (
-          <div className="mb-3 flex items-center justify-between text-xs text-slate-500">
+          <div className="mb-3 flex items-center justify-between text-xs text-ink/60">
             <span>
-              Showing <span className="font-semibold text-slate-900">{visible.length}</span> of {companies.length}{" "}
+              Showing <span className="font-semibold text-ink">{visible.length}</span> of {companies.length}{" "}
               {companies.length === 1 ? "company" : "companies"}
             </span>
             {hasFilters && (
-              <button type="button" onClick={clearFilters} className="inline-flex items-center gap-1 font-semibold text-slate-600 hover:text-slate-900">
+              <button type="button" onClick={clearFilters} className="inline-flex items-center gap-1 font-semibold text-ink/70 hover:text-ink">
                 <X className="h-3.5 w-3.5" />
                 Clear filters
               </button>
@@ -281,7 +281,7 @@ export default function CompaniesPage() {
               <button
                 type="button"
                 onClick={load}
-                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                className="inline-flex items-center gap-2 rounded-lg bg-lime px-4 py-2 text-sm font-semibold text-ink hover:bg-lime-dark"
               >
                 <RotateCw className="h-4 w-4" />
                 Try again
@@ -298,7 +298,7 @@ export default function CompaniesPage() {
               <button
                 type="button"
                 onClick={() => setActiveView("add")}
-                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                className="inline-flex items-center gap-2 rounded-lg bg-lime px-4 py-2 text-sm font-semibold text-ink hover:bg-lime-dark"
               >
                 <Plus className="h-4 w-4" />
                 Add company
@@ -315,7 +315,7 @@ export default function CompaniesPage() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
+                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-ink/80 ring-1 ring-inset ring-ink/12 hover:bg-ivory"
               >
                 <X className="h-4 w-4" />
                 Clear filters
@@ -332,12 +332,12 @@ export default function CompaniesPage() {
 
 function EmptyState({ title, text, action }: { title: string; text: string; action: React.ReactNode }) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-      <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+    <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/25 bg-white px-6 py-14 text-center">
+      <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-ink/6 text-ink/45">
         <Building2 className="h-6 w-6" />
       </span>
-      <h2 className="mt-4 text-sm font-bold text-slate-900">{title}</h2>
-      <p className="mt-1 max-w-sm text-sm text-slate-500">{text}</p>
+      <h2 className="mt-4 text-sm font-bold text-ink">{title}</h2>
+      <p className="mt-1 max-w-sm text-sm text-ink/60">{text}</p>
       <div className="mt-5">{action}</div>
     </div>
   );

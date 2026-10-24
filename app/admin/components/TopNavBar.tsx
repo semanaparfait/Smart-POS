@@ -76,7 +76,7 @@ function useDismiss(ref: React.RefObject<HTMLElement | null>, open: boolean, clo
 }
 
 const popover =
-  "absolute right-0 top-[calc(100%+10px)] z-50 origin-top-right overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-2xl shadow-slate-900/10";
+  "absolute right-0 top-[calc(100%+10px)] z-50 origin-top-right overflow-hidden rounded-xl border border-ink/12 bg-white shadow-2xl shadow-ink/10";
 
 export default function TopNavBar() {
   const { user, fetchMe, logout } = useAuthStore();
@@ -116,28 +116,28 @@ export default function TopNavBar() {
   };
 
   const iconButton =
-    "relative flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 ring-1 ring-inset ring-slate-200 transition-all hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400";
+    "relative flex h-10 w-10 items-center justify-center rounded-lg text-ink/60 ring-1 ring-inset ring-ink/12 transition-all hover:bg-ivory hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime";
 
   return (
-    <header className="relative z-50 flex h-16 w-full shrink-0 items-center gap-6 border-b border-slate-200/80 bg-white/90 px-6 backdrop-blur-md">
+    <header className="relative z-50 flex h-16 w-full shrink-0 items-center gap-6 border-b border-ink/12 bg-white/90 px-6 backdrop-blur-md">
       {/* Page title with breadcrumb */}
       <div className="hidden min-w-0 shrink-0 md:block">
         <nav aria-label="Breadcrumb">
-          <ol className="flex items-center gap-1 text-[11px] font-medium text-slate-400">
+          <ol className="flex items-center gap-1 text-[11px] font-medium text-ink/45">
             <li>
-              <Link href="/admin" className="transition-colors hover:text-slate-700">
+              <Link href="/admin" className="transition-colors hover:text-ink/80">
                 Admin
               </Link>
             </li>
             {crumbs.map((crumb) => (
               <li key={crumb.label} className="flex items-center gap-1">
-                <ChevronRight size={11} className="text-slate-300" aria-hidden="true" />
+                <ChevronRight size={11} className="text-ink/25" aria-hidden="true" />
                 {crumb.href ? (
-                  <Link href={crumb.href} className="transition-colors hover:text-slate-700">
+                  <Link href={crumb.href} className="transition-colors hover:text-ink/80">
                     {crumb.label}
                   </Link>
                 ) : (
-                  <span aria-current="page" className="text-slate-500">
+                  <span aria-current="page" className="text-ink/60">
                     {crumb.label}
                   </span>
                 )}
@@ -145,31 +145,31 @@ export default function TopNavBar() {
             ))}
           </ol>
         </nav>
-        <p className="mt-0.5 truncate text-[17px] font-bold leading-tight tracking-[-0.02em] text-slate-900">{title}</p>
+        <p className="mt-0.5 truncate text-[17px] font-bold leading-tight tracking-[-0.02em] text-ink">{title}</p>
       </div>
 
       {/* Search */}
       <div className="group relative ml-auto w-full max-w-md">
         <Search
           size={16}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-slate-700"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/45 transition-colors group-focus-within:text-ink/80"
         />
         <input
           ref={searchRef}
           type="search"
           placeholder="Search companies, users, devices..."
           aria-label="Search"
-          className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-16 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
+          className="h-10 w-full rounded-lg border border-ink/12 bg-ivory pl-9 pr-16 text-sm text-ink outline-none transition placeholder:text-ink/45 hover:border-ink/25 focus:border-ink/40 focus:bg-white focus:ring-4 focus:ring-lime/40"
         />
-        <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-sans text-[10px] font-semibold text-slate-400 shadow-xs sm:block">
+        <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded-md border border-ink/12 bg-white px-1.5 py-0.5 font-sans text-[10px] font-semibold text-ink/45 shadow-xs sm:block">
           Ctrl K
         </kbd>
       </div>
 
       <div className="flex shrink-0 items-center gap-2.5">
         {/* Today */}
-        <span className="hidden h-10 items-center gap-2 rounded-lg px-3 text-xs font-semibold text-slate-500 ring-1 ring-inset ring-slate-200 xl:flex">
-          <CalendarDays size={15} className="text-slate-400" aria-hidden="true" />
+        <span className="hidden h-10 items-center gap-2 rounded-lg px-3 text-xs font-semibold text-ink/60 ring-1 ring-inset ring-ink/12 xl:flex">
+          <CalendarDays size={15} className="text-ink/45" aria-hidden="true" />
           {/* The date can differ between server and browser time zones */}
           <span suppressHydrationWarning>
             {new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
@@ -187,32 +187,32 @@ export default function TopNavBar() {
               setBellOpen((v) => !v);
               setUserOpen(false);
             }}
-            className={`${iconButton} ${bellOpen ? "bg-slate-50 text-slate-900 ring-slate-300" : ""}`}
+            className={`${iconButton} ${bellOpen ? "bg-ivory text-ink ring-ink/25" : ""}`}
           >
             <Bell size={18} />
           </button>
 
           {bellOpen && (
             <div role="dialog" aria-label="Notifications" className={`${popover} w-80`}>
-              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-                <p className="text-sm font-bold text-slate-900">Notifications</p>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <div className="flex items-center justify-between border-b border-ink/6 px-4 py-3">
+                <p className="text-sm font-bold text-ink">Notifications</p>
+                <span className="rounded-full bg-ink/6 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ink/60">
                   0 new
                 </span>
               </div>
               <div className="flex flex-col items-center px-6 py-9 text-center">
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-ink/6 text-ink/45">
                   <BellOff size={20} />
                 </span>
-                <p className="mt-3 text-sm font-semibold text-slate-900">You&apos;re all caught up</p>
-                <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                <p className="mt-3 text-sm font-semibold text-ink">You&apos;re all caught up</p>
+                <p className="mt-1 text-xs leading-relaxed text-ink/60">
                   New installation requests and system alerts will appear here.
                 </p>
               </div>
               <Link
                 href="/admin/tabs/notifications"
                 onClick={() => setBellOpen(false)}
-                className="block border-t border-slate-100 bg-slate-50/70 px-4 py-2.5 text-center text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                className="block border-t border-ink/6 bg-ivory/70 px-4 py-2.5 text-center text-xs font-semibold text-ink/70 transition-colors hover:bg-ink/6 hover:text-ink"
               >
                 View all notifications
               </Link>
@@ -220,7 +220,7 @@ export default function TopNavBar() {
           )}
         </div>
 
-        <span className="mx-1 h-8 w-px bg-slate-200" aria-hidden="true" />
+        <span className="mx-1 h-8 w-px bg-ink/12" aria-hidden="true" />
 
         {/* User menu */}
         <div ref={userRef} className="relative">
@@ -232,35 +232,35 @@ export default function TopNavBar() {
               setUserOpen((v) => !v);
               setBellOpen(false);
             }}
-            className={`flex items-center gap-3 rounded-xl py-1 pl-1 pr-2.5 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${
-              userOpen ? "bg-slate-50" : ""
+            className={`flex items-center gap-3 rounded-xl py-1 pl-1 pr-2.5 text-left transition-colors hover:bg-ivory focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime ${
+              userOpen ? "bg-ivory" : ""
             }`}
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold tracking-wide text-white">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink text-xs font-bold tracking-wide text-lime">
               {initials(user?.name)}
             </span>
             <span className="hidden min-w-0 leading-tight sm:block">
-              <span className="block max-w-40 truncate text-sm font-semibold text-slate-900">{user?.name ?? "Not signed in"}</span>
-              <span className={`block max-w-40 truncate text-xs text-slate-500 ${user?.role ? "capitalize" : ""}`}>
+              <span className="block max-w-40 truncate text-sm font-semibold text-ink">{user?.name ?? "Not signed in"}</span>
+              <span className={`block max-w-40 truncate text-xs text-ink/60 ${user?.role ? "capitalize" : ""}`}>
                 {user?.role ? formatRole(user.role) : user?.email ?? "Please log in"}
               </span>
             </span>
             <ChevronDown
               size={15}
-              className={`hidden text-slate-400 transition-transform duration-200 sm:block ${userOpen ? "rotate-180" : ""}`}
+              className={`hidden text-ink/45 transition-transform duration-200 sm:block ${userOpen ? "rotate-180" : ""}`}
               aria-hidden="true"
             />
           </button>
 
           {userOpen && (
             <div role="menu" className={`${popover} w-64`}>
-              <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/70 px-4 py-3.5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold text-white">
+              <div className="flex items-center gap-3 border-b border-ink/6 bg-ivory/70 px-4 py-3.5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-ink text-xs font-bold text-lime">
                   {initials(user?.name)}
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-slate-900">{user?.name ?? "Not signed in"}</span>
-                  <span className="block truncate text-xs text-slate-500">{user?.email ?? "Please log in"}</span>
+                  <span className="block truncate text-sm font-semibold text-ink">{user?.name ?? "Not signed in"}</span>
+                  <span className="block truncate text-xs text-ink/60">{user?.email ?? "Please log in"}</span>
                 </span>
               </div>
 
@@ -274,15 +274,15 @@ export default function TopNavBar() {
                     href={href}
                     role="menuitem"
                     onClick={() => setUserOpen(false)}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ink/70 transition-colors hover:bg-ivory hover:text-ink"
                   >
-                    <Icon size={16} className="text-slate-400" />
+                    <Icon size={16} className="text-ink/45" />
                     {label}
                   </Link>
                 ))}
               </div>
 
-              <div className="border-t border-slate-100 p-1.5">
+              <div className="border-t border-ink/6 p-1.5">
                 <button
                   type="button"
                   role="menuitem"

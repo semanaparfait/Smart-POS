@@ -3,706 +3,521 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import useDeviceStore from "@/stores/device/devicestore";
+import toast from "react-hot-toast";
 import {
+  AlertTriangle,
   ArrowLeft,
-  Tablet,
-  Clock,
-  Clock3,
-  Send,
-  CheckCircle2,
-  XCircle,
+  ArrowUpRight,
   Ban,
-  Smartphone,
-  Building2,
-  MapPin,
-  Utensils,
+  BellRing,
   Calendar,
-  User,
-  CreditCard,
-  ArrowRight,
-  Copy,
   Check,
-  X,
-  RefreshCw,
-  KeyRound,
-  MoreHorizontal,
-  Activity,
-  Wifi,
-  History,
-  Zap,
-  MapPinOff,
+  CheckCircle2,
+  Clock,
+  Copy,
+  Cpu,
+  Fingerprint,
+  Hash,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
+  Power,
+  RotateCw,
   Trash2,
-  ChevronRight,
-  Settings,
-  LogIn,
-  Layers,
+  X,
+  XCircle,
+  type LucideIcon,
 } from "lucide-react";
-import type { DeviceByIdResponse } from "@/stores/device/devicetypes";
-import RecentActivities from "@/app/admin/tabs/devices/components/RecentActivities";
+import useDeviceStore from "@/stores/device/devicestore";
+import { RegistrationStatusEnum, type DeviceByIdResponse } from "@/stores/device/devicetypes";
+import {
+  CompanyBadge,
+  StatusPill,
+  formatDate,
+  isAwaiting,
+  platformOf,
+  statusOf,
+} from "@/app/admin/tabs/devices/components/FetchDevices";
+import { industryOf } from "@/app/admin/tabs/companies/components/FetchCompany";
 
-type DeviceAction = "register" | "enable" | "disable" | "delete";
+type Action = "approve" | "reject" | "enable" | "disable" | "delete";
+type LoadState = "loading" | "ready" | "error";
 
-const statusConfig = {
-  PENDING: {
-    label: "Pending",
-    badge: "bg-amber-50 text-amber-700 border-amber-200",
-    dot: "bg-amber-500",
-    icon: Clock3,
-  },
-  REQUESTED: {
-    label: "Requested",
-    badge: "bg-blue-50 text-blue-700 border-blue-200",
-    dot: "bg-blue-500",
-    icon: Send,
-  },
-  REGISTERED: {
-    label: "Registered",
-    badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    dot: "bg-emerald-500",
+const ACTIONS: Record<
+  Action,
+  { title: string; text: (name: string) => string; confirm: string; working: string; done: string; icon: LucideIcon; tone: "dark" | "danger" | "warn" }
+> = {
+  approve: {
+    title: "Approve this device?",
+    text: (n) => `${n} will be registered and can start processing sales for its business.`,
+    confirm: "Approve device",
+    working: "Approving…",
+    done: "Device approved",
     icon: CheckCircle2,
+    tone: "dark",
   },
-  REJECTED: {
-    label: "Rejected",
-    badge: "bg-rose-50 text-rose-700 border-rose-200",
-    dot: "bg-rose-500",
+  reject: {
+    title: "Reject this device?",
+    text: (n) => `${n} will not be allowed to use SmartPOS. Do this for devices you don't recognise.`,
+    confirm: "Reject device",
+    working: "Rejecting…",
+    done: "Device rejected",
     icon: XCircle,
+    tone: "danger",
   },
-  DISABLED: {
-    label: "Disabled",
-    badge: "bg-gray-100 text-gray-700 border-gray-300",
-    dot: "bg-gray-400",
+  enable: {
+    title: "Enable this device?",
+    text: (n) => `${n} will be able to process sales again.`,
+    confirm: "Enable device",
+    working: "Enabling…",
+    done: "Device enabled",
+    icon: Power,
+    tone: "dark",
+  },
+  disable: {
+    title: "Disable this device?",
+    text: (n) => `${n} will stop processing sales until you enable it again.`,
+    confirm: "Disable device",
+    working: "Disabling…",
+    done: "Device disabled",
     icon: Ban,
+    tone: "warn",
   },
-} as const;
+  delete: {
+    title: "Delete this device?",
+    text: (n) => `${n} will be permanently removed. This cannot be undone.`,
+    confirm: "Delete permanently",
+    working: "Deleting…",
+    done: "Device deleted",
+    icon: Trash2,
+    tone: "danger",
+  },
+};
+
+const TONE = {
+  dark: { icon: "bg-ink/6 text-ink/80", button: "bg-ink hover:bg-ink/90" },
+  warn: { icon: "bg-amber-50 text-amber-700", button: "bg-amber-600 hover:bg-amber-700" },
+  danger: { icon: "bg-rose-50 text-rose-600", button: "bg-rose-600 hover:bg-rose-700" },
+};
 
 export default function DeviceDetailPage() {
-  const [device, setDevice] = useState<DeviceByIdResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [logoFailed, setLogoFailed] = useState(false);
-  const [activeAction, setActiveAction] = useState<DeviceAction | null>(null);
-  const [processingAction, setProcessingAction] = useState<DeviceAction | null>(
-    null,
-  );
-
-  const params = useParams();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const id = params?.id as string;
+  const fetchDeviceById = useDeviceStore((s) => s.fetchDeviceById);
+  const registerDevice = useDeviceStore((s) => s.registerDevice);
+  const enableDevice = useDeviceStore((s) => s.enableDevice);
+  const disableDevice = useDeviceStore((s) => s.disableDevice);
+  const deleteDevice = useDeviceStore((s) => s.deleteDevice);
 
-  const fetchDeviceById = useDeviceStore((state: any) => state.fetchDeviceById);
-  const registerDevice = useDeviceStore((state: any) => state.registerDevice);
-  const enableDevice = useDeviceStore((state: any) => state.enableDevice);
-  const disableDevice = useDeviceStore((state: any) => state.disableDevice);
-  const deleteDevice = useDeviceStore((state: any) => state.deleteDevice);
+  const [device, setDevice] = useState<DeviceByIdResponse | null>(null);
+  const [loadState, setLoadState] = useState<LoadState>("loading");
+  const [errorText, setErrorText] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  const [pending, setPending] = useState<Action | null>(null);
+  const [working, setWorking] = useState(false);
+  const [copied, setCopied] = useState("");
 
   useEffect(() => {
     if (!id) return;
-    const fetchData = async () => {
-      setLoading(true);
-      const deviceData = await fetchDeviceById(id);
-      if (deviceData) {
-        setDevice(deviceData);
-      } else {
+    let alive = true;
+    fetchDeviceById(id)
+      .then((data) => {
+        if (!alive) return;
+        if (data) {
+          setDevice(data);
+          setLoadState("ready");
+        } else {
+          setErrorText("Please sign in again to view this device.");
+          setLoadState("error");
+        }
+      })
+      .catch((err: unknown) => {
+        if (!alive) return;
+        setErrorText(err instanceof Error ? err.message : "Failed to load the device.");
+        setLoadState("error");
+      });
+    return () => {
+      alive = false;
+    };
+  }, [id, fetchDeviceById, attempt]);
+
+  // Escape closes the confirmation dialog
+  useEffect(() => {
+    if (!pending) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !working && setPending(null);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [pending, working]);
+
+  const retry = () => {
+    setLoadState("loading");
+    setAttempt((n) => n + 1);
+  };
+
+  const copy = async (key: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(key);
+      setTimeout(() => setCopied((c) => (c === key ? "" : c)), 1800);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
+  const runAction = async () => {
+    if (!pending || !id) return;
+    setWorking(true);
+    try {
+      if (pending === "approve" || pending === "reject") await registerDevice(id, pending === "approve" ? "APPROVE" : "REJECT");
+      if (pending === "enable") await enableDevice(id);
+      if (pending === "disable") await disableDevice(id);
+      if (pending === "delete") {
+        await deleteDevice(id);
+        toast.success(ACTIONS.delete.done);
         router.push("/admin/tabs/devices");
+        return;
       }
-      setLoading(false);
-    };
-    fetchData();
-  }, [id, fetchDeviceById, router]);
-
-  const copyToClipboard = (text: string, fieldKey: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(fieldKey);
-    setTimeout(() => setCopiedField(null), 2000);
+      toast.success(ACTIONS[pending].done);
+      // Reload so the page shows exactly what the server saved
+      const fresh = await fetchDeviceById(id);
+      if (fresh) setDevice(fresh);
+      setPending(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setWorking(false);
+    }
   };
 
-  const handleRegistrationDecision = async (action: "APPROVE" | "REJECT") => {
-    if (!id) return;
+  const backLink = (
+    <Link href="/admin/tabs/devices" className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-ink/60 transition-colors hover:text-ink">
+      <ArrowLeft className="h-4 w-4" />
+      POS devices
+    </Link>
+  );
 
-    setProcessingAction("register");
-    const updatedDevice = await registerDevice(id, action);
-    if (updatedDevice) {
-      setDevice(updatedDevice);
-      setActiveAction(null);
-    }
-    setProcessingAction(null);
-  };
-
-  const handleDeviceAction = async () => {
-    if (!id || !activeAction || activeAction === "register") return;
-
-    setProcessingAction(activeAction);
-    const actionHandlers = {
-      enable: enableDevice,
-      disable: disableDevice,
-      delete: deleteDevice,
-    };
-    const updatedDevice = await actionHandlers[activeAction](id);
-
-    if (updatedDevice && activeAction === "delete") {
-      router.push("/admin/tabs/devices");
-      return;
-    }
-    if (updatedDevice) {
-      setDevice(updatedDevice);
-      setActiveAction(null);
-    }
-    setProcessingAction(null);
-  };
-
-  const actionDetails = {
-    register: {
-      title: "Review device registration",
-      description: `Choose whether POS-${id} should be approved or rejected for registration.`,
-      icon: KeyRound,
-      iconClass: "bg-emerald-50 text-emerald-700",
-      confirmClass: "bg-emerald-700 hover:bg-emerald-800",
-      confirmLabel: "Approve device",
-      processingLabel: "Approving...",
-    },
-    enable: {
-      title: "Enable this device?",
-      description: `POS-${id} will be enabled and available for use by the business.`,
-      icon: CheckCircle2,
-      iconClass: "bg-emerald-50 text-emerald-700",
-      confirmClass: "bg-emerald-700 hover:bg-emerald-800",
-      confirmLabel: "Enable device",
-      processingLabel: "Enabling...",
-    },
-    disable: {
-      title: "Disable this device?",
-      description: `POS-${id} will be temporarily disabled and unable to process transactions.`,
-      icon: Ban,
-      iconClass: "bg-amber-50 text-amber-700",
-      confirmClass: "bg-amber-600 hover:bg-amber-700",
-      confirmLabel: "Disable device",
-      processingLabel: "Disabling...",
-    },
-    delete: {
-      title: "Delete this device?",
-      description: `POS-${id} will be permanently removed. This action cannot be undone.`,
-      icon: Trash2,
-      iconClass: "bg-rose-50 text-rose-700",
-      confirmClass: "bg-rose-600 hover:bg-rose-700",
-      confirmLabel: "Delete permanently",
-      processingLabel: "Deleting...",
-    },
-  } as const;
-
-  const selectedAction = activeAction ? actionDetails[activeAction] : null;
-  const SelectedActionIcon = selectedAction?.icon;
-  const isProcessing = processingAction !== null;
-
-  const statusKey =
-    (device?.registrationStatus as keyof typeof statusConfig) || "REGISTERED";
-  const currentStatus = statusConfig[statusKey] || statusConfig.REGISTERED;
-
-  if (loading) {
+  if (loadState === "loading") {
     return (
-      <div className="flex min-h-[450px] w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
+      <div className="space-y-6" aria-busy="true">
+        {backLink}
+        <div className="h-36 animate-pulse rounded-2xl border border-ink/12 bg-white" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="h-80 animate-pulse rounded-2xl bg-white lg:col-span-2" />
+          <div className="h-80 animate-pulse rounded-2xl bg-white" />
+        </div>
       </div>
     );
   }
 
+  if (loadState === "error" || !device) {
+    return (
+      <div className="space-y-6">
+        {backLink}
+        <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/25 bg-white px-6 py-14 text-center">
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 text-rose-500">
+            <AlertTriangle className="h-6 w-6" />
+          </span>
+          <h1 className="mt-4 text-base font-bold text-ink">Couldn&apos;t load this device</h1>
+          <p className="mt-1 max-w-sm text-sm text-ink/60">{errorText || "The device may have been removed."}</p>
+          <button type="button" onClick={retry} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-lime px-4 py-2 text-sm font-semibold text-ink hover:bg-lime-dark">
+            <RotateCw className="h-4 w-4" />
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const name = device.deviceName || "Unnamed device";
+  const platform = platformOf(device.deviceOs, device.deviceName);
+  const PlatformIcon = platform.icon;
+  const status = device.registrationStatus;
+  const awaiting = isAwaiting(status);
+  const company = device.company;
+  const industry = company ? industryOf(company.type) : null;
+
+  // Main actions depend on the current status
+  const primaryActions: { action: Action; label: string; icon: LucideIcon; style: "dark" | "outline" | "danger" }[] = awaiting
+    ? [
+        { action: "reject", label: "Reject", icon: X, style: "danger" },
+        { action: "approve", label: "Approve", icon: Check, style: "dark" },
+      ]
+    : status === RegistrationStatusEnum.REGISTERED
+      ? [{ action: "disable", label: "Disable", icon: Ban, style: "outline" }]
+      : status === RegistrationStatusEnum.DISABLED
+        ? [{ action: "enable", label: "Enable", icon: Power, style: "dark" }]
+        : status === RegistrationStatusEnum.REJECTED
+          ? [{ action: "approve", label: "Approve instead", icon: Check, style: "dark" }]
+          : [];
+
+  const buttonStyle = {
+    dark: "bg-ink text-white shadow-md shadow-ink/15 hover:bg-ink/90",
+    outline: "text-ink/80 ring-1 ring-inset ring-ink/12 hover:bg-ivory hover:text-ink",
+    danger: "text-rose-600 ring-1 ring-inset ring-rose-200 hover:bg-rose-50",
+  };
+
+  const details: { key: string; label: string; value: string; icon: LucideIcon; mono?: boolean; copy?: boolean }[] = [
+    { key: "name", label: "Device name", value: name, icon: PlatformIcon },
+    { key: "deviceId", label: "Device ID", value: device.deviceId, icon: Hash, mono: true, copy: true },
+    { key: "os", label: "Operating system", value: device.deviceOs || "Unknown", icon: Cpu },
+    { key: "platform", label: "Platform", value: platform.label, icon: PlatformIcon },
+    { key: "created", label: "Added", value: formatDate(device.createdAt, true), icon: Calendar },
+    { key: "updated", label: "Last updated", value: formatDate(device.updatedAt, true), icon: Clock },
+  ];
+
+  const config = pending ? ACTIONS[pending] : null;
+  const ConfigIcon = config?.icon;
+
   return (
-    <div className="space-y-6 p-2  bg-[#f8fafc]/60 min-h-screen">
-      {/* Back button */}
-      <div>
-        <Link
-          href="/admin/tabs/devices"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800 hover:text-emerald-900 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Devices
-        </Link>
-      </div>
+    <div className="space-y-6 pb-10">
+      {backLink}
 
-      {/* Top Hero Section */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100">
-            <Tablet className="h-8 w-8 stroke-[1.8]" />
+      {/* Header */}
+      <section className="rounded-2xl border border-ink/12 bg-white p-6 shadow-xs">
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            <span
+              className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl ${
+                status === RegistrationStatusEnum.REGISTERED ? "bg-ink text-lime shadow-lg shadow-ink/20" : "bg-ink/6 text-ink/60"
+              }`}
+            >
+              <PlatformIcon className="h-8 w-8" strokeWidth={1.7} />
+            </span>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="truncate text-2xl font-bold tracking-[-0.02em] text-ink">{name}</h1>
+                <StatusPill status={status} />
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink/60">
+                <button
+                  type="button"
+                  onClick={() => copy("deviceId", device.deviceId)}
+                  title="Copy device ID"
+                  className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-ivory px-2 py-0.5 font-mono text-xs font-semibold text-ink/80 ring-1 ring-inset ring-ink/12 transition-colors hover:bg-ink/6"
+                >
+                  <span className="truncate">{device.deviceId}</span>
+                  {copied === "deviceId" ? <Check className="h-3 w-3 shrink-0" /> : <Copy className="h-3 w-3 shrink-0 text-ink/45" />}
+                </button>
+                <span>{device.deviceOs || platform.label}</span>
+                {company?.name && (
+                  <Link href={`/admin/tabs/companies/${company.id}`} className="font-medium text-ink/80 hover:text-ink hover:underline">
+                    {company.name}
+                  </Link>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                POS-{id}
-              </h1>
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${currentStatus.badge}`}
+          {primaryActions.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {primaryActions.map(({ action, label, icon: Icon, style }) => (
+                <button
+                  key={action}
+                  type="button"
+                  onClick={() => setPending(action)}
+                  className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${buttonStyle[style]}`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {awaiting && (
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/70 p-4">
+            <BellRing className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+            <p className="text-sm text-amber-900">
+              <span className="font-semibold">This device is waiting for approval.</span> Check that it belongs to{" "}
+              {company?.name || "the business"} before approving it.
+            </p>
+          </div>
+        )}
+      </section>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Device details */}
+        <section className="rounded-2xl border border-ink/12 bg-white shadow-xs lg:col-span-2">
+          <header className="border-b border-ink/6 px-6 py-4">
+            <h2 className="text-sm font-bold text-ink">Device details</h2>
+          </header>
+          <dl className="grid grid-cols-1 sm:grid-cols-2">
+            {details.map(({ key, label, value, icon: Icon, mono, copy: canCopy }, i) => (
+              <div
+                key={key}
+                className={`group flex items-start gap-3.5 px-6 py-5 ${i >= 1 ? "border-t border-ink/6" : ""} ${
+                  i === 1 ? "sm:border-t-0" : ""
+                } ${i % 2 === 1 ? "sm:border-l" : ""}`}
               >
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${currentStatus.dot}`}
-                />
-                {currentStatus.label}
-              </span>
-            </div>
-            <p className="text-xs font-medium text-slate-500">
-              {device?.deviceOs || "Android POS"}
-            </p>
-            <p className="flex items-center gap-1 text-xs text-emerald-700">
-              <Clock className="h-3.5 w-3.5" />
-              <span>Last active 2 minutes ago</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Row 1: Device Information & Business Cards */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Device Information */}
-        <div className="rounded-xl border border-slate-200/90 bg-white p-6 shadow-xs">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
-            <Smartphone className="h-5 w-5 text-emerald-700" />
-            <h2 className="text-sm font-semibold text-slate-900">
-              Device Information
-            </h2>
-          </div>
-
-          <div className="mt-4 space-y-3.5 text-xs sm:text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500 font-normal">Device ID</span>
-              <div className="flex items-center gap-1.5 font-medium text-slate-900">
-                <span>POS-{id}</span>
-                <button
-                  onClick={() => copyToClipboard(`POS-${id}`, "deviceId")}
-                  className="text-slate-400 hover:text-slate-600 transition"
-                >
-                  {copiedField === "deviceId" ? (
-                    <Check className="h-3.5 w-3.5 text-emerald-600" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                </button>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink/6 text-ink/60">
+                  <Icon className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <dt className="text-xs font-semibold text-ink/45">{label}</dt>
+                  <dd className="mt-0.5 flex items-center gap-2">
+                    <span className={`truncate text-sm font-semibold text-ink ${mono ? "font-mono text-[13px]" : ""}`}>{value}</span>
+                    {canCopy && (
+                      <button
+                        type="button"
+                        onClick={() => copy(key, value)}
+                        aria-label={`Copy ${label.toLowerCase()}`}
+                        className="rounded p-1 text-ink/25 opacity-0 transition hover:bg-ink/6 hover:text-ink/80 focus:opacity-100 group-hover:opacity-100"
+                      >
+                        {copied === key ? <Check className="h-3.5 w-3.5 text-ink" /> : <Copy className="h-3.5 w-3.5" />}
+                      </button>
+                    )}
+                  </dd>
+                </div>
               </div>
-            </div>
+            ))}
+          </dl>
 
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500 font-normal">Status</span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                {currentStatus.label}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500 font-normal">Device Type</span>
-              <span className="flex items-center gap-1.5 font-medium text-slate-900">
-                <Smartphone className="h-3.5 w-3.5 text-emerald-600" />
-                {device?.deviceOs || "Android POS"}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500 font-normal">App Version</span>
-              <span className="font-medium text-slate-900">v2.4.1</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500 font-normal">Created At</span>
-              <span className="font-medium text-slate-900">
-                {device?.createdAt
-                  ? new Date(device.createdAt).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    }) + " • 10:32 AM"
-                  : "N/A"}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500 font-normal">Last Active</span>
-              <span className="font-medium text-slate-900">
-                {device?.updatedAt
-                  ? new Date(device.updatedAt).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    }) + " • 10:45 AM"
-                  : "N/A"}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500 font-normal">Registered By</span>
-              <span className="font-medium text-slate-900">Shema Parfait</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500 font-normal">Android ID</span>
-              <div className="flex items-center gap-1.5 font-mono text-xs text-slate-600">
-                <span>a1b2c3d4e5f6g7h8</span>
-                <button
-                  onClick={() =>
-                    copyToClipboard("a1b2c3d4e5f6g7h8", "androidId")
-                  }
-                  className="text-slate-400 hover:text-slate-600 transition"
-                >
-                  {copiedField === "androidId" ? (
-                    <Check className="h-3.5 w-3.5 text-emerald-600" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                </button>
-              </div>
-            </div>
+          {/* Status history from the record dates */}
+          <div className="border-t border-ink/6 px-6 py-5">
+            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-ink/45">Status</h3>
+            <ol className="mt-4 space-y-4">
+              <li className="relative flex gap-3 pl-0.5">
+                <span className="absolute left-[7px] top-5 h-[calc(100%+4px)] w-px bg-ink/12" aria-hidden="true" />
+                <span className="relative mt-1 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-ink/25 bg-white" />
+                <div>
+                  <p className="text-sm font-semibold text-ink">Registration requested</p>
+                  <p className="text-xs text-ink/60">{formatDate(device.createdAt, true)}</p>
+                </div>
+              </li>
+              <li className="flex gap-3 pl-0.5">
+                <span className={`mt-1 h-3.5 w-3.5 shrink-0 rounded-full ring-4 ring-ink/6 ${statusOf(status).dot}`} />
+                <div>
+                  <p className="text-sm font-semibold text-ink">Now {statusOf(status).label.toLowerCase()}</p>
+                  <p className="text-xs text-ink/60">Last change {formatDate(device.updatedAt, true)}</p>
+                </div>
+              </li>
+            </ol>
           </div>
-        </div>
+        </section>
 
-        {/* Business Information */}
-        <div className="rounded-xl border border-slate-200/90 bg-white p-6 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
-              <Building2 className="h-5 w-5 text-emerald-700" />
-              <h2 className="text-sm font-semibold text-slate-900">Business</h2>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-12 gap-5">
-              {/* Business Details List */}
-              <div className="sm:col-span-8 space-y-4">
+        <aside className="space-y-6">
+          {/* Business */}
+          <section className="rounded-2xl border border-ink/12 bg-white shadow-xs">
+            <header className="border-b border-ink/6 px-6 py-4">
+              <h2 className="text-sm font-bold text-ink">Business</h2>
+            </header>
+            {company ? (
+              <div className="p-6">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-800 text-white font-bold text-base">
-                    {device?.company?.name?.charAt(0).toUpperCase() || "L"}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 leading-tight">
-                      {device?.company?.name || "Lex Corp Hotel"}
-                    </h3>
-                    <p className="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
-                      <MapPin className="h-3 w-3 text-slate-400" />
-                      {device?.company?.location || "Kigali, Rwanda"}
+                  <CompanyBadge name={company.name} logo={company.logo} size="h-12 w-12 text-sm" />
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-ink">{company.name}</p>
+                    <p className="mt-0.5 flex items-center gap-2 text-xs text-ink/60">
+                      {industry && <span>{industry.label}</span>}
+                      {company.code && <span className="font-mono">{company.code}</span>}
                     </p>
                   </div>
                 </div>
-
-                <div className="space-y-3 pt-2 text-xs sm:text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 font-normal">
-                      Location / Branch
-                    </span>
-                    <span className="flex items-center gap-1.5 font-medium text-slate-900">
-                      <Utensils className="h-3.5 w-3.5 text-slate-400" />
-                      {device?.company?.location || "Main Restaurant"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 font-normal">Owner</span>
-                    <span className="flex items-center gap-1.5 font-medium text-slate-900">
-                      <User className="h-3.5 w-3.5 text-slate-400" />
-                      Shema Parfait
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 font-normal">
-                      Company Code
-                    </span>
-                    <span className="flex items-center gap-1.5 font-medium text-slate-900">
-                      <Building2 className="h-3.5 w-3.5 text-slate-400" />
-                      {device?.company?.code || "NTC8ZD"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 font-normal">
-                      Registered At
-                    </span>
-                    <span className="flex items-center gap-1.5 font-medium text-slate-900">
-                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                      Sep 30, 2026 • 10:32 AM
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Business Profile Sidebar Pill */}
-              <div className="sm:col-span-4 rounded-xl bg-emerald-50/60 border border-emerald-100/80 p-5 flex flex-col items-center justify-center text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-800 text-white font-bold text-lg mb-2 shadow-xs">
-                  {device?.company?.name?.charAt(0).toUpperCase() || "L"}
-                </div>
-                <h4 className="font-bold text-slate-900 text-sm">
-                  {device?.company?.name || "Lex Corp Hotel"}
-                </h4>
-                <p className="text-[11px] text-slate-500 mb-4">
-                  Hospitality & Comfort
-                </p>
+                <dl className="mt-5 space-y-3 text-[13px]">
+                  {[
+                    { icon: MapPin, value: company.location, label: "Location" },
+                    { icon: Mail, value: company.email, label: "Email", href: company.email ? `mailto:${company.email}` : "" },
+                    { icon: Phone, value: company.phone_number ? String(company.phone_number) : "", label: "Phone" },
+                  ].map(({ icon: Icon, value, label, href }) => (
+                    <div key={label} className="flex items-center gap-2.5">
+                      <dt className="sr-only">{label}</dt>
+                      <Icon className="h-4 w-4 shrink-0 text-ink/45" />
+                      <dd className={`truncate ${value ? "text-ink/80" : "italic text-ink/45"}`}>
+                        {value && href ? <a href={href} className="hover:underline">{value}</a> : value || "Not provided"}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
                 <Link
-                  href={
-                    device?.company?.id
-                      ? `/admin/tabs/companies/${device.company.id}`
-                      : "#"
-                  }
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:text-emerald-900 transition"
+                  href={`/admin/tabs/companies/${company.id}`}
+                  className="mt-5 flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-ink/80 ring-1 ring-inset ring-ink/12 transition-colors hover:bg-ivory hover:text-ink"
                 >
-                  View Company <ArrowRight className="h-3.5 w-3.5" />
+                  View business <ArrowUpRight className="h-4 w-4" />
                 </Link>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
+            ) : (
+              <p className="p-6 text-sm text-ink/60">This device isn&apos;t linked to a business.</p>
+            )}
+          </section>
 
-      {/* Row 2: Device Health Section */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-emerald-700" />
-          <h2 className="text-sm font-semibold text-slate-900">
-            Device Health
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Card 1: Online status */}
-          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-              <Wifi className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="flex items-center gap-1.5 text-sm font-bold text-slate-900">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" /> Online
-              </p>
-              <p className="text-[11px] text-slate-500">
-                Device is active and connected
-              </p>
-            </div>
-          </div>
-
-          {/* Card 2: Last Sync */}
-          <div className="rounded-xl border border-slate-200/80 bg-white p-4 flex items-center gap-3 shadow-xs">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-              <Clock className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[11px] text-slate-400 font-medium">
-                Last Sync
-              </p>
-              <p className="text-xs font-bold text-slate-900">2 minutes ago</p>
-              <p className="text-[10px] text-slate-400">
-                Sep 30, 2026 • 10:45 AM
-              </p>
-            </div>
-          </div>
-
-          {/* Card 3: App Version */}
-          <div className="rounded-xl border border-slate-200/80 bg-white p-4 flex items-center gap-3 shadow-xs">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
-              <Tablet className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[11px] text-slate-400 font-medium">
-                App Version
-              </p>
-              <p className="text-xs font-bold text-slate-900">v2.4.1</p>
-              <p className="text-[10px] text-slate-400">Latest version</p>
-            </div>
-          </div>
-
-          {/* Card 4: Device Type */}
-          <div className="rounded-xl border border-slate-200/80 bg-white p-4 flex items-center gap-3 shadow-xs">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-              <Layers className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[11px] text-slate-400 font-medium">
-                Device Type
-              </p>
-              <p className="text-xs font-bold text-slate-900">Android POS</p>
-              <p className="text-[10px] text-slate-400">Mobile POS Terminal</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Row 3: Recent Activity & Device Actions */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* recent activities tab */}
-        <RecentActivities />
-
-        {/* Device Actions List */}
-        <div className="rounded-xl border border-slate-200/90 bg-white p-6 shadow-xs">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
-            <Zap className="h-5 w-5 text-emerald-700" />
-            <h2 className="text-sm font-semibold text-slate-900">
-              Device Actions
-            </h2>
-          </div>
-
-          <div className="mt-4 space-y-2.5">
-            {/* Reset Activation */}
-            <button
-              type="button"
-              onClick={() => setActiveAction("register")}
-              className="flex w-full items-center justify-between rounded-xl border border-slate-100 bg-white p-3 hover:bg-slate-50 transition text-left"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-                  <KeyRound className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-900">
-                    Register Device
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    Approve or reject the device registration
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="h-4 w-4 text-slate-400" />
-            </button>
-
-            {/* Reassign Location */}
-            <button
-              type="button"
-              onClick={() => setActiveAction("enable")}
-              className="flex w-full items-center justify-between rounded-xl border border-slate-100 bg-white p-3 hover:bg-slate-50 transition text-left"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-                  <MapPin className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-900">
-                    Enable Device
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    Enable the device for use
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="h-4 w-4 text-slate-400" />
-            </button>
-
-            {/* Disable Device */}
-            <button
-              type="button"
-              onClick={() => setActiveAction("disable")}
-              className="flex w-full items-center justify-between rounded-xl border border-slate-100 bg-white p-3 hover:bg-slate-50 transition text-left"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
-                  <Ban className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-900">
-                    Disable Device
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    Temporarily disable this device
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="h-4 w-4 text-slate-400" />
-            </button>
-
-            {/* Delete Device */}
-            <button
-              type="button"
-              onClick={() => setActiveAction("delete")}
-              className="flex w-full items-center justify-between rounded-xl border border-rose-200 bg-rose-50/20 p-3 hover:bg-rose-50/50 transition text-left"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-600">
-                  <Trash2 className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-rose-600">
-                    Delete Device
-                  </p>
-                  <p className="text-[11px] text-rose-400">
-                    Permanently remove this device
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="h-4 w-4 text-rose-400" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {selectedAction && SelectedActionIcon && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !isProcessing) {
-              setActiveAction(null);
-            }
-          }}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="device-action-modal-title"
-          >
+          {/* Record */}
+          <section className="rounded-2xl border border-ink/12 bg-white px-6 py-4 shadow-xs">
             <div className="flex items-start gap-3">
-              <div
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${selectedAction.iconClass}`}
-              >
-                <SelectedActionIcon className="h-5 w-5" />
-              </div>
-              <div>
-                <h2
-                  id="device-action-modal-title"
-                  className="text-base font-bold text-slate-900"
-                >
-                  {selectedAction.title}
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  {selectedAction.description}
-                </p>
+              <Fingerprint className="mt-0.5 h-4 w-4 shrink-0 text-ink/45" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-ink/45">Internal record ID</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <code className="min-w-0 flex-1 truncate rounded-md bg-ivory px-2 py-1 font-mono text-[11px] text-ink/70 ring-1 ring-inset ring-ink/12">
+                    {device.id}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => copy("id", device.id)}
+                    aria-label="Copy internal record ID"
+                    className="rounded-md p-1.5 text-ink/45 transition-colors hover:bg-ink/6 hover:text-ink"
+                  >
+                    {copied === "id" ? <Check className="h-3.5 w-3.5 text-ink" /> : <Copy className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
               </div>
             </div>
+          </section>
 
-            <div className="mt-6 flex justify-end gap-3">
+          {/* Danger zone */}
+          <section className="rounded-2xl border border-rose-200/80 bg-white p-6 shadow-xs">
+            <h2 className="text-sm font-bold text-ink">Delete device</h2>
+            <p className="mt-1 text-xs leading-relaxed text-ink/60">
+              Permanently remove this device from SmartPOS. It will need to request registration again.
+            </p>
+            <button
+              type="button"
+              onClick={() => setPending("delete")}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold text-rose-600 ring-1 ring-inset ring-rose-200 transition-colors hover:bg-rose-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete device
+            </button>
+          </section>
+        </aside>
+      </div>
+
+      {/* Confirmation dialog */}
+      {config && ConfigIcon && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
+          onPointerDown={(e) => e.target === e.currentTarget && !working && setPending(null)}
+        >
+          <div role="alertdialog" aria-modal="true" aria-labelledby="device-action-title" className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start gap-4 p-6">
+              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${TONE[config.tone].icon}`}>
+                <ConfigIcon className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 id="device-action-title" className="text-base font-bold text-ink">{config.title}</h2>
+                <p className="mt-1 text-sm leading-relaxed text-ink/60">{config.text(name)}</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2.5 border-t border-ink/6 bg-ivory/70 px-6 py-4">
               <button
                 type="button"
-                disabled={isProcessing}
-                onClick={() => setActiveAction(null)}
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={working}
+                onClick={() => setPending(null)}
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-ink/80 ring-1 ring-inset ring-ink/12 transition-colors hover:bg-white disabled:opacity-50"
               >
                 Cancel
               </button>
-              {activeAction === "register" ? (
-                <>
-                  <button
-                    type="button"
-                    disabled={isProcessing}
-                    onClick={() => handleRegistrationDecision("REJECT")}
-                    className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {processingAction === "register"
-                      ? "Rejecting..."
-                      : "Reject"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isProcessing}
-                    onClick={() => handleRegistrationDecision("APPROVE")}
-                    className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {processingAction === "register"
-                      ? "Approving..."
-                      : "Approve"}
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  disabled={isProcessing}
-                  onClick={handleDeviceAction}
-                  className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${selectedAction.confirmClass}`}
-                >
-                  {isProcessing
-                    ? selectedAction.processingLabel
-                    : selectedAction.confirmLabel}
-                </button>
-              )}
+              <button
+                type="button"
+                disabled={working}
+                onClick={runAction}
+                autoFocus
+                className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-70 ${TONE[config.tone].button}`}
+              >
+                {working && <Loader2 className="h-4 w-4 animate-spin" />}
+                {working ? config.working : config.confirm}
+              </button>
             </div>
           </div>
         </div>
