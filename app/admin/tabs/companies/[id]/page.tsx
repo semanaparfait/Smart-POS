@@ -2,413 +2,438 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import useCompaniesStore from "@/stores/companies/companystore";
-import { CompanyTypeResponse } from "@/stores/companies/companyTypes";
+import type { CompanyTypeResponse } from "@/stores/companies/companyTypes";
 import {
-  Building2,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Hash,
-  ShoppingBag,
-  ArrowLeft,
-  Copy,
-  Check,
-  Edit3,
-  Store,
-  MonitorSmartphone,
-  Users,
-  CreditCard,
-  Clock,
-  ShieldCheck,
   AlertTriangle,
+  ArrowLeft,
+  ArrowUpRight,
+  Calendar,
+  Check,
+  Clock,
+  Copy,
+  Fingerprint,
+  Hash,
+  Mail,
+  MapPin,
+  MonitorSmartphone,
+  Pencil,
+  Phone,
+  Receipt,
+  RotateCw,
+  Store,
+  Users,
 } from "lucide-react";
+import { industryOf } from "@/app/admin/tabs/companies/components/FetchCompany";
+import EditCompany from "@/app/admin/tabs/companies/components/EditCompany";
+
+const formatDate = (value?: string, withTime = false) => {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}),
+  });
+};
+
+const timeAgo = (value?: string) => {
+  const days = value ? Math.floor((Date.now() - new Date(value).getTime()) / 86_400_000) : NaN;
+  if (Number.isNaN(days) || days < 0) return "";
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 30) return `${days} days ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} month${months > 1 ? "s" : ""} ago`;
+  const years = Math.floor(months / 12);
+  return `${years} year${years > 1 ? "s" : ""} ago`;
+};
+
+/** Rwandan 9-digit numbers (e.g. 788123456) dial as +250… */
+const telHref = (phone: string) => {
+  const digits = phone.replace(/[^\d+]/g, "");
+  if (/^7\d{8}$/.test(digits)) return `tel:+250${digits}`;
+  if (/^07\d{8}$/.test(digits)) return `tel:+250${digits.slice(1)}`;
+  return `tel:${digits}`;
+};
+
+const initials = (name?: string) =>
+  (name ?? "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "C";
+
+type LoadState = "loading" | "ready" | "error";
 
 export default function CompanyDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const id = params?.id as string;
-
-  const fetchSingleCompany = useCompaniesStore(
-    (state: any) => state.fetchSingleCompany
-  );
+  const { id } = useParams<{ id: string }>();
+  const fetchSingleCompany = useCompaniesStore((state) => state.fetchSingleCompany);
 
   const [company, setCompany] = useState<CompanyTypeResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "branches" | "devices" | "staff"
-  >("overview");
-  const [copiedCode, setCopiedCode] = useState(false);
+  const [loadState, setLoadState] = useState<LoadState>("loading");
+  const [errorText, setErrorText] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [copied, setCopied] = useState("");
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!id) return;
+    let alive = true;
 
-    let isMounted = true;
-
-    async function loadData() {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const data = await fetchSingleCompany(id);
-        if (isMounted) {
-          if (!data) {
-            setError("Company could not be found or you are not authorized.");
-          } else {
-            setCompany(data);
-          }
+    fetchSingleCompany(id)
+      .then((data) => {
+        if (!alive) return;
+        if (data) {
+          setCompany(data);
+          setLoadState("ready");
+        } else {
+          setErrorText("Please sign in again to view this company.");
+          setLoadState("error");
         }
-      } catch (err: any) {
-        if (isMounted) {
-          setError(err?.message || "Failed to load company details");
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    loadData();
+      })
+      .catch((err: unknown) => {
+        if (!alive) return;
+        setErrorText(err instanceof Error ? err.message : "Failed to load company details.");
+        setLoadState("error");
+      });
 
     return () => {
-      isMounted = false;
+      alive = false;
     };
-  }, [id, fetchSingleCompany]);
+  }, [id, fetchSingleCompany, attempt]);
 
-  const handleCopyCode = async (code: string) => {
+  const retry = () => {
+    setLoadState("loading");
+    setAttempt((n) => n + 1);
+  };
+
+  const copy = async (key: string, value: string) => {
     try {
-      await navigator.clipboard.writeText(code);
-      setCopiedCode(true);
-      setTimeout(() => setCopiedCode(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy code:", err);
+      await navigator.clipboard.writeText(value);
+      setCopied(key);
+      setTimeout(() => setCopied((current) => (current === key ? "" : current)), 1800);
+    } catch {
+      /* clipboard unavailable */
     }
   };
 
-  // Loading Skeleton State
-  if (isLoading) {
+  const backLink = (
+    <Link
+      href="/admin/tabs/companies"
+      className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-900"
+    >
+      <ArrowLeft className="h-4 w-4" />
+      Companies
+    </Link>
+  );
+
+  if (loadState === "loading") {
     return (
-      <div className="space-y-6 animate-pulse p-6">
-        <div className="h-6 w-36 bg-gray-200 rounded-md" />
-        <div className="h-44 bg-gray-200 rounded-2xl" />
-        <div className="h-10 bg-gray-200 rounded-lg w-1/2" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 h-64 bg-gray-200 rounded-xl" />
-          <div className="h-64 bg-gray-200 rounded-xl" />
+      <div className="space-y-6" aria-busy="true">
+        {backLink}
+        <div className="animate-pulse overflow-hidden rounded-2xl border border-slate-200/80 bg-white">
+          <div className="h-28 bg-slate-100" />
+          <div className="flex items-end gap-5 px-6 pb-6">
+            <div className="-mt-10 h-20 w-20 rounded-2xl bg-slate-200 ring-4 ring-white" />
+            <div className="flex-1 space-y-2 pb-1">
+              <div className="h-5 w-1/3 rounded bg-slate-100" />
+              <div className="h-3.5 w-1/4 rounded bg-slate-100" />
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="h-72 animate-pulse rounded-2xl bg-white lg:col-span-2" />
+          <div className="h-72 animate-pulse rounded-2xl bg-white" />
         </div>
       </div>
     );
   }
 
-  // Error / Not Found State
-  if (error || !company) {
+  if (loadState === "error" || !company) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center bg-white rounded-2xl border border-gray-100 mt-6">
-        <div className="h-12 w-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mb-3">
-          <AlertTriangle className="h-6 w-6" />
+      <div className="space-y-6">
+        {backLink}
+        <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 text-rose-500">
+            <AlertTriangle className="h-6 w-6" />
+          </span>
+          <h1 className="mt-4 text-base font-bold text-slate-900">Couldn&apos;t load this company</h1>
+          <p className="mt-1 max-w-sm text-sm text-slate-500">{errorText || "The company may have been removed."}</p>
+          <button
+            type="button"
+            onClick={retry}
+            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            <RotateCw className="h-4 w-4" />
+            Try again
+          </button>
         </div>
-        <h2 className="text-lg font-semibold text-gray-900">
-          Unable to Load Company
-        </h2>
-        <p className="text-sm text-gray-500 mt-1 max-w-sm">
-          {error || "We couldn't retrieve the company record."}
-        </p>
-        <button
-          onClick={() => router.back()}
-          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Go Back
-        </button>
       </div>
     );
   }
+
+  const industry = industryOf(company.type);
+  const IndustryIcon = industry.icon;
+  const phone = company.phone_number ? String(company.phone_number) : "";
+
+  const profile = [
+    { key: "location", label: "Location", value: company.location, icon: MapPin },
+    { key: "email", label: "Email", value: company.email, icon: Mail, href: company.email ? `mailto:${company.email}` : "", copy: true },
+    { key: "phone", label: "Phone", value: phone, icon: Phone, href: phone ? telHref(phone) : "", copy: true },
+    { key: "industry", label: "Industry", value: industry.label, icon: IndustryIcon },
+  ];
+
+  const modules = [
+    { label: "Branches", icon: Store },
+    { label: "POS devices", icon: MonitorSmartphone },
+    { label: "Staff", icon: Users },
+    { label: "Sales", icon: Receipt },
+  ];
 
   return (
-    <div className="min-h-screen space-y-6 pb-12">
-      {/* Top Breadcrumb & Actions */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Link
-          href="/admin/tabs/companies"
-          className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors w-fit"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Back to Companies</span>
-        </Link>
+    <div className="space-y-6 pb-10">
+      {backLink}
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 shadow-2xs hover:bg-gray-50 hover:text-gray-900 transition"
-          >
-            <Edit3 className="h-4 w-4 text-gray-500" />
-            <span>Edit Profile</span>
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-2xs hover:bg-emerald-700 transition"
-          >
-            <Store className="h-4 w-4" />
-            <span>Launch POS View</span>
-          </button>
+      {/* Profile header */}
+      <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+        <div className="relative h-28 bg-slate-900">
+          <div
+            className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.12)_1px,transparent_1px)] bg-size-[16px_16px] mask-[linear-gradient(to_left,black,transparent_85%)]"
+            aria-hidden="true"
+          />
+          <span className="absolute right-6 top-5 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/80 ring-1 ring-inset ring-white/15">
+            <IndustryIcon className="h-3.5 w-3.5" />
+            {industry.label}
+          </span>
         </div>
-      </div>
 
-      {/* Main Profile Header Card */}
-      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xs sm:p-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-            {/* Logo / Fallback Initial */}
+        <div className="flex flex-col gap-5 px-6 pb-6 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             {company.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element -- logos come from arbitrary hosts
               <img
                 src={company.logo}
-                alt={company.name}
-                className="h-20 w-20 rounded-2xl object-cover border border-gray-200 shadow-sm"
+                alt=""
+                className="relative z-10 -mt-10 h-20 w-20 shrink-0 rounded-2xl bg-white object-cover shadow-md ring-4 ring-white"
               />
             ) : (
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-2xl font-bold uppercase text-emerald-700 border border-emerald-200 shadow-inner">
-                {company.name ? company.name.charAt(0) : "C"}
-              </div>
+              <span className="relative z-10 -mt-10 flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-white text-2xl font-extrabold tracking-wide text-slate-900 shadow-md ring-4 ring-white">
+                {initials(company.name)}
+              </span>
             )}
 
-            <div className="space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-2xl font-bold capitalize tracking-tight text-gray-900 sm:text-3xl">
-                  {company.name}
-                </h1>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  Active Merchant
-                </span>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
-                <span className="inline-flex items-center gap-1 font-medium text-gray-700 capitalize">
-                  <ShoppingBag className="h-4 w-4 text-emerald-600" />
-                  {company.type?.toLowerCase()}
-                </span>
-                <span>•</span>
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="h-4 w-4 text-gray-400" />
-                  {company.location}
-                </span>
-                <span>•</span>
-                <button
-                  type="button"
-                  onClick={() => handleCopyCode(company.code)}
-                  title="Click to copy code"
-                  className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-2 py-0.5 text-xs font-mono font-semibold text-gray-800 hover:bg-gray-200 transition"
-                >
-                  <Hash className="h-3 w-3 text-gray-400" />
-                  <span>{company.code}</span>
-                  {copiedCode ? (
-                    <Check className="h-3 w-3 text-emerald-600" />
-                  ) : (
-                    <Copy className="h-3 w-3 text-gray-400" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Metric Ribbon */}
-        <div className="mt-8 grid grid-cols-2 gap-4 border-t border-gray-100 pt-6 sm:grid-cols-4">
-          <div className="rounded-xl bg-gray-50/70 p-4 border border-gray-100">
-            <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
-              <Store className="h-4 w-4 text-emerald-600" />
-              <span>Branches</span>
-            </div>
-            <p className="mt-2 text-2xl font-bold text-gray-900">1</p>
-            <p className="text-[11px] text-gray-400">Headquarters</p>
-          </div>
-
-          <div className="rounded-xl bg-gray-50/70 p-4 border border-gray-100">
-            <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
-              <MonitorSmartphone className="h-4 w-4 text-blue-600" />
-              <span>POS Terminals</span>
-            </div>
-            <p className="mt-2 text-2xl font-bold text-gray-900">4</p>
-            <p className="text-[11px] text-gray-400">All registered devices</p>
-          </div>
-
-          <div className="rounded-xl bg-gray-50/70 p-4 border border-gray-100">
-            <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
-              <Users className="h-4 w-4 text-purple-600" />
-              <span>Cashiers & Staff</span>
-            </div>
-            <p className="mt-2 text-2xl font-bold text-gray-900">6</p>
-            <p className="text-[11px] text-gray-400">Active users</p>
-          </div>
-
-          <div className="rounded-xl bg-gray-50/70 p-4 border border-gray-100">
-            <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
-              <CreditCard className="h-4 w-4 text-amber-600" />
-              <span>30-Day Revenue</span>
-            </div>
-            <p className="mt-2 text-2xl font-bold text-emerald-600">RWF 48.2M</p>
-            <p className="text-[11px] text-gray-400">Across all checkouts</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="flex space-x-8">
-          {[
-            { id: "overview", label: "Overview & Info" },
-            { id: "branches", label: "Branches" },
-            { id: "devices", label: "POS Terminals" },
-            { id: "staff", label: "Staff & Roles" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? "border-emerald-600 text-emerald-700"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Tab Panels */}
-      {activeTab === "overview" && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Contact Details */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-xs">
-              <h2 className="text-base font-semibold text-gray-900 mb-4">
-                Contact & Profile Details
-              </h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-start gap-3 rounded-lg border border-gray-100 p-3.5 bg-gray-50/40">
-                  <Mail className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
-                  <div>
-                    <span className="block text-xs font-medium uppercase tracking-wider text-gray-400">
-                      Email Address
-                    </span>
-                    <a
-                      href={`mailto:${company.email}`}
-                      className="text-sm font-medium text-emerald-700 hover:underline"
-                    >
-                      {company.email}
-                    </a>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 rounded-lg border border-gray-100 p-3.5 bg-gray-50/40">
-                  <Phone className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
-                  <div>
-                    <span className="block text-xs font-medium uppercase tracking-wider text-gray-400">
-                      Phone Number
-                    </span>
-                    <a
-                      href={`tel:${company.phone_number}`}
-                      className="text-sm font-medium text-gray-900 hover:underline"
-                    >
-                      {company.phone_number}
-                    </a>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 rounded-lg border border-gray-100 p-3.5 bg-gray-50/40">
-                  <MapPin className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
-                  <div>
-                    <span className="block text-xs font-medium uppercase tracking-wider text-gray-400">
-                      Address / Location
-                    </span>
-                    <span className="text-sm font-medium text-gray-900 capitalize">
-                      {company.location}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 rounded-lg border border-gray-100 p-3.5 bg-gray-50/40">
-                  <ShoppingBag className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
-                  <div>
-                    <span className="block text-xs font-medium uppercase tracking-wider text-gray-400">
-                      Industry Category
-                    </span>
-                    <span className="text-sm font-medium text-gray-900 capitalize">
-                      {company.type?.toLowerCase()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* System & Metadata */}
-          <div className="space-y-6">
-            <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-xs">
-              <h2 className="text-base font-semibold text-gray-900 mb-4">
-                System Identifiers
-              </h2>
-
-              <dl className="space-y-3.5 text-xs">
-                <div>
-                  <dt className="text-gray-400 uppercase font-semibold text-[10px]">
-                    Internal ID
-                  </dt>
-                  <dd className="font-mono text-gray-800 break-all mt-0.5 bg-gray-50 p-2 rounded-md border border-gray-100">
-                    {company.id}
-                  </dd>
-                </div>
-
-                <div>
-                  <dt className="text-gray-400 uppercase font-semibold text-[10px]">
-                    Registration Code
-                  </dt>
-                  <dd className="font-mono font-semibold text-emerald-700 text-sm mt-0.5">
+            <div className="min-w-0 pb-0.5">
+              <h1 className="truncate text-2xl font-bold tracking-[-0.02em] text-slate-900">{company.name}</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-slate-500">
+                {company.code && (
+                  <button
+                    type="button"
+                    onClick={() => copy("code", company.code)}
+                    title="Copy registration code"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-slate-50 px-2 py-0.5 font-mono text-xs font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-100"
+                  >
+                    <Hash className="h-3 w-3 text-slate-400" />
                     {company.code}
-                  </dd>
-                </div>
-
-                <div className="pt-2 border-t border-gray-100">
-                  <dt className="text-gray-400 flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5" />
-                    <span>Created Date</span>
-                  </dt>
-                  <dd className="text-gray-800 font-medium mt-0.5">
-                    {new Date(company.createdAt).toLocaleString()}
-                  </dd>
-                </div>
-
-                <div>
-                  <dt className="text-gray-400 flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>Last Updated</span>
-                  </dt>
-                  <dd className="text-gray-800 font-medium mt-0.5">
-                    {new Date(company.updatedAt).toLocaleString()}
-                  </dd>
-                </div>
-              </dl>
+                    {copied === "code" ? <Check className="h-3 w-3 text-slate-900" /> : <Copy className="h-3 w-3 text-slate-400" />}
+                  </button>
+                )}
+                {company.location && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4 text-slate-400" />
+                    {company.location}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 text-slate-400" />
+                  Joined {formatDate(company.createdAt)}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {activeTab !== "overview" && (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
-          <Store className="h-10 w-10 text-gray-300" />
-          <h3 className="mt-3 text-sm font-semibold text-gray-900 capitalize">
-            {activeTab} Management
-          </h3>
-          <p className="mt-1 text-xs text-gray-500">
-            Module to configure company {activeTab} will appear here.
-          </p>
+          <div className="flex flex-wrap gap-2">
+            {company.email && (
+              <a
+                href={`mailto:${company.email}`}
+                className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-50 hover:text-slate-900"
+              >
+                <Mail className="h-4 w-4" />
+                Email
+              </a>
+            )}
+            {phone && (
+              <a
+                href={telHref(phone)}
+                className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-50 hover:text-slate-900"
+              >
+                <Phone className="h-4 w-4" />
+                Call
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-slate-900/15 transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+            >
+              <Pencil className="h-4 w-4" />
+              Edit company
+            </button>
+          </div>
         </div>
+      </section>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          {/* Business profile */}
+          <section className="rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+            <header className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <h2 className="text-sm font-bold text-slate-900">Business profile</h2>
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="text-xs font-semibold text-slate-500 transition-colors hover:text-slate-900"
+              >
+                Edit
+              </button>
+            </header>
+            <dl className="grid grid-cols-1 sm:grid-cols-2">
+              {profile.map(({ key, label, value, icon: Icon, href, copy: canCopy }, i) => (
+                <div
+                  key={key}
+                  className={`group flex items-start gap-3.5 px-6 py-5 ${i >= 2 ? "border-t border-slate-100" : ""} ${
+                    i % 2 === 1 ? "sm:border-l" : ""
+                  } ${i === 1 ? "border-t border-slate-100 sm:border-t-0" : ""}`}
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <dt className="text-xs font-semibold text-slate-400">{label}</dt>
+                    <dd className="mt-0.5 flex items-center gap-2">
+                      {!value ? (
+                        <span className="text-sm italic text-slate-400">Not provided</span>
+                      ) : href ? (
+                        <a href={href} className="truncate text-sm font-semibold text-slate-900 hover:underline">
+                          {value}
+                        </a>
+                      ) : (
+                        <span className="truncate text-sm font-semibold text-slate-900">{value}</span>
+                      )}
+                      {canCopy && value && (
+                        <button
+                          type="button"
+                          onClick={() => copy(key, value)}
+                          aria-label={`Copy ${label.toLowerCase()}`}
+                          className="rounded p-1 text-slate-300 opacity-0 transition hover:bg-slate-100 hover:text-slate-700 focus:opacity-100 group-hover:opacity-100"
+                        >
+                          {copied === key ? <Check className="h-3.5 w-3.5 text-slate-900" /> : <Copy className="h-3.5 w-3.5" />}
+                        </button>
+                      )}
+                    </dd>
+                  </div>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          {/* Operations — not provided by the API yet */}
+          <section className="rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+            <header className="border-b border-slate-100 px-6 py-4">
+              <h2 className="text-sm font-bold text-slate-900">Operations</h2>
+              <p className="mt-0.5 text-xs text-slate-500">Live figures will appear here once they are connected.</p>
+            </header>
+            <ul className="grid grid-cols-2 gap-3 p-6 md:grid-cols-4">
+              {modules.map(({ label, icon: Icon }) => (
+                <li key={label} className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-4">
+                  <Icon className="h-5 w-5 text-slate-400" />
+                  <p className="mt-3 text-sm font-semibold text-slate-700">{label}</p>
+                  <p className="mt-0.5 text-[11px] font-medium text-slate-400">Not connected yet</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+
+        {/* Record */}
+        <aside className="space-y-6">
+          <section className="rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+            <header className="border-b border-slate-100 px-6 py-4">
+              <h2 className="text-sm font-bold text-slate-900">Record</h2>
+            </header>
+            <dl className="divide-y divide-slate-100">
+              <div className="flex items-start gap-3 px-6 py-4">
+                <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                <div>
+                  <dt className="text-xs font-semibold text-slate-400">Registered</dt>
+                  <dd className="text-sm font-semibold text-slate-900">{formatDate(company.createdAt, true)}</dd>
+                  <dd className="text-xs text-slate-500">{timeAgo(company.createdAt)}</dd>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 px-6 py-4">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                <div>
+                  <dt className="text-xs font-semibold text-slate-400">Last updated</dt>
+                  <dd className="text-sm font-semibold text-slate-900">{formatDate(company.updatedAt, true)}</dd>
+                  <dd className="text-xs text-slate-500">{timeAgo(company.updatedAt)}</dd>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 px-6 py-4">
+                <Fingerprint className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                <div className="min-w-0 flex-1">
+                  <dt className="text-xs font-semibold text-slate-400">Internal ID</dt>
+                  <dd className="mt-1 flex items-center gap-2">
+                    <code className="min-w-0 flex-1 truncate rounded-md bg-slate-50 px-2 py-1 font-mono text-[11px] text-slate-600 ring-1 ring-inset ring-slate-200">
+                      {company.id}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => copy("id", company.id)}
+                      aria-label="Copy internal ID"
+                      className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                    >
+                      {copied === "id" ? <Check className="h-3.5 w-3.5 text-slate-900" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </dd>
+                </div>
+              </div>
+            </dl>
+          </section>
+
+          {company.location && (
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(company.location)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white px-6 py-4 shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <span className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-white">
+                  <MapPin className="h-4 w-4" />
+                </span>
+                <span>
+                  <span className="block text-sm font-bold text-slate-900">View on map</span>
+                  <span className="block max-w-48 truncate text-xs text-slate-500">{company.location}</span>
+                </span>
+              </span>
+              <ArrowUpRight className="h-4 w-4 text-slate-400 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-slate-900" />
+            </a>
+          )}
+        </aside>
+      </div>
+
+      {editing && (
+        <EditCompany
+          company={company}
+          onClose={() => setEditing(false)}
+          onSaved={(updated) => {
+            setCompany(updated);
+            setEditing(false);
+          }}
+        />
       )}
     </div>
   );

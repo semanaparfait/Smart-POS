@@ -15,8 +15,9 @@ const useCompanyStore = create<{
   companies: CompanyType[];
   fetchCompanies: () => Promise<void>;
   addCompany: (company: CompanyTypePayload) => Promise<CompanyTypeResponse>;
-  updateCompany: (id: string, company: Partial<CompanyType>) => Promise<void>;
+  updateCompany: (id: string, company: Partial<CompanyTypePayload>) => Promise<CompanyTypeResponse>;
   deleteCompany: (id: string) => Promise<void>;
+  fetchSingleCompany: (id: string) => Promise<CompanyTypeResponse | null>;
 }>((set, get) => ({
   companies: [],
 
@@ -72,7 +73,7 @@ const useCompanyStore = create<{
     return newCompany;
   },
 
-  updateCompany: async (id: string, company: Partial<CompanyType>) => {
+  updateCompany: async (id: string, company: Partial<CompanyTypePayload>) => {
     if (!API_URL) throw new Error("API_URL is not defined");
 
     const token = getAuthToken();
@@ -94,6 +95,8 @@ const useCompanyStore = create<{
     set({
       companies: get().companies.map((c) => (c.id === id ? updatedCompany : c)),
     });
+
+    return updatedCompany;
   },
 
   deleteCompany: async (id: string) => {
