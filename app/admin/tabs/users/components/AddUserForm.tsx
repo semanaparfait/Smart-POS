@@ -1,421 +1,308 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  UserPlus,
-  ArrowLeft,
-  Building2,
-  Shield,
-  Mail,
-  Phone,
-  User,
-  Loader2,
-  CheckCircle2,
-  KeyRound,
-  Copy,
-  Check,
-  Calendar,
-  AlertCircle,
-  X,
-} from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
-
+import { Check, CheckCircle2, Copy, KeyRound, Loader2, Mail, Phone, Search, UserRound, X } from "lucide-react";
 import useUserStore from "@/stores/users/userStore";
-import { UserRole, type UserPayload } from "@/stores/users/userTypes";
+import useCompaniesStore from "@/stores/companies/companystore";
+import { UserRole, type UserPayload, type createUserResponse } from "@/stores/users/userTypes";
+import { ROLES } from "@/app/admin/tabs/users/components/FetchUsers";
+import { CompanyBadge, primaryButton, secondaryButton } from "@/app/admin/components/shared";
 
-export interface CreateUserResponse {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  company: {
-    id: string;
-  };
-  name: string;
-  email: string;
-  phone: string;
-  password: string;
-  role: UserRole;
-  active: boolean;
-  mustChangePassword: boolean;
-  lastLoginAt: null | string;
-}
+const field =
+  "h-11 w-full rounded-lg border border-ink/12 bg-white pl-10 pr-3 text-sm text-ink outline-none transition placeholder:text-ink/45 hover:border-ink/25 focus:border-ink/40 focus:ring-4 focus:ring-lime/40";
 
-export default function AddUserForm({
-  onSuccess,
-}: {
-  onSuccess: () => void;
-}) {
-  const createUser = useUserStore((state) => state.createUser);
+const EMPTY: UserPayload = { companyCode: "", name: "", email: "", phone: "", role: UserRole.OWNER };
 
+export default function AddUserForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void }) {
+  const createUser = useUserStore((s) => s.createUser);
+  const companies = useCompaniesStore((s) => s.companies);
+  const fetchCompanies = useCompaniesStore((s) => s.fetchCompanies);
+
+  const [form, setForm] = useState<UserPayload>(EMPTY);
+  const [companyQuery, setCompanyQuery] = useState("");
+  const [companiesFailed, setCompaniesFailed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [createdUser, setCreatedUser] = useState<CreateUserResponse | null>(null);
+  const [error, setError] = useState("");
+  const [created, setCreated] = useState<createUserResponse | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const [form, setForm] = useState<UserPayload>({
-    companyCode: "",
-    name: "",
-    email: "",
-    phone: "",
-    role: UserRole.OWNER,
-  });
+  useEffect(() => {
+    fetchCompanies().catch(() => setCompaniesFailed(true));
+  }, [fetchCompanies]);
 
-  const handleChange = (field: keyof UserPayload, value: string) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  const selectedCompany = companies.find((c) => c.code === form.companyCode);
 
-  const handleCopyPassword = () => {
-    if (!createdUser?.password) return;
-    navigator.clipboard.writeText(createdUser.password);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const companyMatches = useMemo(() => {
+    const q = companyQuery.trim().toLowerCase();
+    return companies
+      .filter((c) => !q || [c.name, c.code, c.location].some((v) => v?.toLowerCase().includes(q)))
+      .slice(0, 6);
+  }, [companies, companyQuery]);
 
-  const handleCloseModal = () => {
-    setCreatedUser(null);
-    onSuccess();
-  };
+  const set = (key: keyof UserPayload) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((f) => ({ ...f, [key]: key === "companyCode" ? e.target.value.toUpperCase() : e.target.value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.companyCode || !form.name.trim() || !form.email.trim() || !form.phone.trim()) {
+      setError("Please choose a business and fill in every field.");
+      return;
+    }
 
     setSubmitting(true);
-    setError(null);
-
+    setError("");
     try {
-      if (
-        !form.companyCode ||
-        !form.name ||
-        !form.email ||
-        !form.phone ||
-        !form.role
-      ) {
-        throw new Error("Please fill in all required fields.");
-      }
-
-      // Capture the returned user from createUser
-      const res = await createUser(form);
-      const newUserData: CreateUserResponse =
-        (res as any)?.data ?? (res as any)?.user ?? res;
-
-      toast.success("User registered successfully!");
-
-      // Open credentials confirmation modal
-      setCreatedUser(newUserData);
-
-      // Reset form
-      setForm({
-        companyCode: "",
-        name: "",
-        email: "",
-        phone: "",
-        role: UserRole.OWNER,
-      });
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to create user.";
-
+      const user = await createUser({ ...form, name: form.name.trim(), email: form.email.trim(), phone: form.phone.trim() });
+      if (!user) throw new Error("Please sign in again and retry.");
+      toast.success(`${user.name || "User"} added`);
+      setCreated(user);
+      setForm(EMPTY);
+      setCompanyQuery("");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not create the user.";
       setError(message);
-      toast.error(message);
     } finally {
       setSubmitting(false);
     }
   };
 
+  const copyPassword = async () => {
+    if (!created?.password) return;
+    try {
+      await navigator.clipboard.writeText(created.password);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
   return (
     <>
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-8">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
-          <div>
-            <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-              <UserPlus className="h-5 w-5 text-emerald-600" />
-              Add New User
-            </h2>
+      <form onSubmit={handleSubmit} className="overflow-hidden rounded-2xl border border-ink/12 bg-white shadow-xs">
+        <div className="grid grid-cols-1 lg:grid-cols-3">
+          {/* Step 1: business */}
+          <section className="border-b border-ink/6 p-6 lg:border-b-0 lg:border-r">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45">Step 1</p>
+            <h2 className="mt-1 text-sm font-bold text-ink">Choose the business</h2>
+            <p className="mt-1 text-xs text-ink/60">The user will only see this business&apos;s data.</p>
 
-            <p className="mt-0.5 text-xs text-slate-500">
-              Assign a user to a company and give them a system role.
-            </p>
-          </div>
+            {selectedCompany ? (
+              <div className="mt-4 flex items-center gap-3 rounded-xl bg-ink p-3 text-white">
+                <CompanyBadge name={selectedCompany.name} logo={selectedCompany.logo} size="h-10 w-10 text-xs" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-bold">{selectedCompany.name}</span>
+                  <span className="block truncate font-mono text-[11px] text-lime">{selectedCompany.code}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, companyCode: "" }))}
+                  className="rounded-md px-2 py-1 text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white"
+                >
+                  Change
+                </button>
+              </div>
+            ) : companiesFailed || companies.length === 0 ? (
+              <label className="mt-4 block">
+                <span className="mb-1.5 block text-xs font-semibold text-ink/80">Business code</span>
+                <span className="relative block">
+                  <KeyRound className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/45" />
+                  <input value={form.companyCode} onChange={set("companyCode")} placeholder="e.g. SPX-0012" className={`${field} font-mono uppercase`} />
+                </span>
+                <span className="mt-1.5 block text-[11px] text-ink/45">Find it on the business&apos;s page under Companies.</span>
+              </label>
+            ) : (
+              <div className="mt-4">
+                <span className="relative block">
+                  <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/45" />
+                  <input
+                    value={companyQuery}
+                    onChange={(e) => setCompanyQuery(e.target.value)}
+                    placeholder="Search businesses..."
+                    aria-label="Search businesses"
+                    className={field}
+                  />
+                </span>
+                <ul className="mt-2 space-y-1" role="listbox" aria-label="Businesses">
+                  {companyMatches.map((c) => (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={false}
+                        onClick={() => setForm((f) => ({ ...f, companyCode: c.code }))}
+                        className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-ivory"
+                      >
+                        <CompanyBadge name={c.name} logo={c.logo} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[13px] font-semibold text-ink">{c.name}</span>
+                          <span className="block truncate text-[11px] text-ink/45">{c.location}</span>
+                        </span>
+                        <span className="font-mono text-[11px] text-ink/45">{c.code}</span>
+                      </button>
+                    </li>
+                  ))}
+                  {companyMatches.length === 0 && <li className="px-2.5 py-3 text-xs text-ink/45">No business matches “{companyQuery}”.</li>}
+                </ul>
+              </div>
+            )}
+          </section>
 
-          <button
-            type="button"
-            onClick={onSuccess}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 transition hover:text-emerald-700"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Cancel
-          </button>
+          {/* Step 2: person + role */}
+          <section className="p-6 lg:col-span-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45">Step 2</p>
+            <h2 className="mt-1 text-sm font-bold text-ink">Who are you adding?</h2>
+
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label className="sm:col-span-2">
+                <span className="mb-1.5 block text-xs font-semibold text-ink/80">Full name</span>
+                <span className="relative block">
+                  <UserRound className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/45" />
+                  <input value={form.name} onChange={set("name")} placeholder="e.g. Aline Uwase" autoComplete="off" className={field} />
+                </span>
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-semibold text-ink/80">Email</span>
+                <span className="relative block">
+                  <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/45" />
+                  <input type="email" value={form.email} onChange={set("email")} placeholder="name@business.rw" autoComplete="off" className={field} />
+                </span>
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-semibold text-ink/80">Phone</span>
+                <span className="relative block">
+                  <Phone className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/45" />
+                  <input type="tel" value={form.phone} onChange={set("phone")} placeholder="07XX XXX XXX" autoComplete="off" className={field} />
+                </span>
+              </label>
+            </div>
+
+            <fieldset className="mt-5">
+              <legend className="mb-2 text-xs font-semibold text-ink/80">Role</legend>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {[UserRole.OWNER, UserRole.EMPLOYEE].map((value) => {
+                  const { label, icon: Icon, note } = ROLES[value];
+                  const checked = form.role === value;
+                  return (
+                    <label
+                      key={value}
+                      className={`flex cursor-pointer items-center gap-3 rounded-xl p-3.5 ring-inset transition-all ${
+                        checked ? "bg-ivory ring-2 ring-ink" : "ring-1 ring-ink/12 hover:ring-ink/25"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="role"
+                        value={value}
+                        checked={checked}
+                        onChange={() => setForm((f) => ({ ...f, role: value }))}
+                        className="sr-only"
+                      />
+                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${checked ? "bg-ink text-lime" : "bg-ink/6 text-ink/60"}`}>
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-bold text-ink">{label}</span>
+                        <span className="block text-xs text-ink/60">{note}</span>
+                      </span>
+                      <span className={`flex h-5 w-5 items-center justify-center rounded-full ${checked ? "bg-lime ring-1 ring-ink/30" : "ring-1 ring-inset ring-ink/25"}`}>
+                        {checked && <Check className="h-3 w-3 text-ink" strokeWidth={3} />}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            {error && (
+              <p role="alert" className="mt-5 rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+                {error}
+              </p>
+            )}
+          </section>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs font-medium text-rose-700">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            {/* Company Code */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
-                Company Code
-              </label>
-
-              <div className="relative">
-                <Building2 className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. COMP-102"
-                  value={form.companyCode}
-                  onChange={(e) =>
-                    handleChange("companyCode", e.target.value.toUpperCase())
-                  }
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-sm uppercase text-slate-800 shadow-xs outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-                />
-              </div>
-            </div>
-
-            {/* Full Name */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
-                Full Name
-              </label>
-
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-
-                <input
-                  type="text"
-                  required
-                  placeholder="Olivia Williams"
-                  value={form.name}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-sm text-slate-800 shadow-xs outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-                />
-              </div>
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
-                Email Address
-              </label>
-
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-
-                <input
-                  type="email"
-                  required
-                  placeholder="user@example.com"
-                  value={form.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-sm text-slate-800 shadow-xs outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-                />
-              </div>
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
-                Phone Number
-              </label>
-
-              <div className="relative">
-                <Phone className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-
-                <input
-                  type="tel"
-                  required
-                  placeholder="+250 788 123 456"
-                  value={form.phone}
-                  onChange={(e) => handleChange("phone", e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-sm text-slate-800 shadow-xs outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-                />
-              </div>
-            </div>
-
-            {/* Role */}
-            <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
-                Assigned Role
-              </label>
-
-              <div className="relative">
-                <Shield className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-
-                <select
-                  value={form.role}
-                  onChange={(e) =>
-                    handleChange("role", e.target.value as UserRole)
-                  }
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-sm text-slate-800 shadow-xs outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-                >
-                  <option value={UserRole.OWNER}>OWNER</option>
-                  <option value={UserRole.EMPLOYEE}>EMPLOYEE</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
-            <button
-              type="button"
-              onClick={onSuccess}
-              disabled={submitting}
-              className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
+        <div className="flex flex-col-reverse gap-2.5 border-t border-ink/6 bg-ivory/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-ink/60">They&apos;ll get an email to set their own password.</p>
+          <div className="flex justify-end gap-2.5">
+            <button type="button" onClick={onCancel} disabled={submitting} className={secondaryButton}>
               Cancel
             </button>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {submitting ? "Creating..." : "Create User"}
+            <button type="submit" disabled={submitting} className={primaryButton}>
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {submitting ? "Adding…" : "Add user"}
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
 
-      {/* Success Modal */}
-      {createdUser && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm transition-opacity"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xl transition-all sm:p-7">
-            {/* Close button */}
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            {/* Header with success badge */}
-            <div className="flex items-start gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/20">
+      {/* Created */}
+      {created && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm">
+          <div role="dialog" aria-modal="true" aria-labelledby="user-created-title" className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start gap-4 p-6">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-lime text-ink">
                 <CheckCircle2 className="h-6 w-6" />
-              </div>
-              <div className="pr-6">
-                <h3 className="text-lg font-bold text-slate-900">
-                  User Created Successfully
-                </h3>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  The account has been created and registered in the system.
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 id="user-created-title" className="text-base font-bold text-ink">
+                  {created.name} can now sign in
+                </h2>
+                <p className="mt-1 text-sm leading-relaxed text-ink/60">
+                  We sent a link to <span className="font-semibold text-ink">{created.email}</span> to set their password. Ask them to
+                  check their spam folder too.
                 </p>
               </div>
-            </div>
-
-            {/* Email notification notice banner */}
-            <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-blue-200/80 bg-blue-50/60 p-3.5 text-xs text-blue-900">
-              <Mail className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
-              <p className="leading-relaxed">
-                A password change link has been sent to{" "}
-                <span className="font-semibold underline underline-offset-2">
-                  {createdUser.email}
-                </span>
-                . Please advise them to check their inbox or spam folder.
-              </p>
-            </div>
-
-            {/* User Details Grid */}
-            <div className="mt-4 space-y-3 rounded-xl border border-slate-100 bg-slate-50/70 p-4">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-slate-500">Full Name</span>
-                <span className="font-semibold text-slate-900">
-                  {createdUser.name}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-slate-500">Role</span>
-                <span className="inline-flex rounded-md border border-slate-200 bg-white px-2 py-0.5 font-semibold text-slate-700">
-                  {createdUser.role}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-slate-500">Phone</span>
-                <span className="font-mono text-slate-800">
-                  {createdUser.phone}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-slate-500">System ID</span>
-                <span className="font-mono text-[11px] text-slate-500">
-                  {createdUser.id}
-                </span>
-              </div>
-
-              {/* Temporary Password & Copy Button */}
-              {createdUser.password && (
-                <div className="flex items-center justify-between border-t border-slate-200/60 pt-2.5 text-xs">
-                  <span className="flex items-center gap-1 font-medium text-slate-500">
-                    <KeyRound className="h-3.5 w-3.5 text-slate-400" />
-                    Generated Password
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-md bg-white px-2 py-1 font-mono font-medium text-slate-800 ring-1 ring-slate-200">
-                      {createdUser.password}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleCopyPassword}
-                      className="rounded-md border border-slate-200 bg-white p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-                      title="Copy Password"
-                    >
-                      {copied ? (
-                        <Check className="h-3.5 w-3.5 text-emerald-600" />
-                      ) : (
-                        <Copy className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Must Change Password Badge */}
-              <div className="flex items-center justify-between border-t border-slate-200/60 pt-2.5 text-xs">
-                <span className="font-medium text-slate-500">
-                  Must Change Password
-                </span>
-                <span
-                  className={`font-semibold ${
-                    createdUser.mustChangePassword
-                      ? "text-amber-600"
-                      : "text-slate-600"
-                  }`}
-                >
-                  {createdUser.mustChangePassword ? "Yes (Required)" : "No"}
-                </span>
-              </div>
-            </div>
-
-            {/* Bottom Actions */}
-            <div className="mt-6 flex justify-end">
               <button
                 type="button"
-                onClick={handleCloseModal}
-                className="w-full rounded-xl bg-emerald-600 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-emerald-700 sm:w-auto sm:px-6"
+                onClick={() => {
+                  setCreated(null);
+                  onSuccess();
+                }}
+                aria-label="Close"
+                className="rounded-lg p-1.5 text-ink/45 hover:bg-ink/6 hover:text-ink"
               >
-                Done & Return to Users
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <dl className="mx-6 divide-y divide-ink/6 rounded-xl bg-ivory px-4 text-sm">
+              <div className="flex justify-between gap-4 py-2.5">
+                <dt className="text-ink/60">Role</dt>
+                <dd className="font-semibold text-ink">{ROLES[created.role]?.label ?? created.role}</dd>
+              </div>
+              <div className="flex justify-between gap-4 py-2.5">
+                <dt className="text-ink/60">Phone</dt>
+                <dd className="font-semibold text-ink">{created.phone}</dd>
+              </div>
+              {created.password && (
+                <div className="flex items-center justify-between gap-4 py-2.5">
+                  <dt className="text-ink/60">Temporary password</dt>
+                  <dd className="flex items-center gap-2">
+                    <code className="rounded-md bg-white px-2 py-0.5 font-mono text-[13px] font-semibold text-ink ring-1 ring-ink/12">{created.password}</code>
+                    <button type="button" onClick={copyPassword} aria-label="Copy password" className="rounded-md p-1 text-ink/45 hover:bg-white hover:text-ink">
+                      {copied ? <Check className="h-4 w-4 text-ink" /> : <Copy className="h-4 w-4" />}
+                    </button>
+                  </dd>
+                </div>
+              )}
+              <div className="flex justify-between gap-4 py-2.5">
+                <dt className="text-ink/60">Must change password</dt>
+                <dd className="font-semibold text-ink">{created.mustChangePassword ? "Yes, on first sign-in" : "No"}</dd>
+              </div>
+            </dl>
+
+            <div className="mt-6 flex justify-end border-t border-ink/6 bg-ivory/70 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setCreated(null);
+                  onSuccess();
+                }}
+                className={primaryButton}
+              >
+                Done
               </button>
             </div>
           </div>
