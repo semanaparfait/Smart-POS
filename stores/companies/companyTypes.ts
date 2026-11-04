@@ -29,8 +29,14 @@ export interface CompanyTypePayload {
   type: CompanyKind;
 }
 
+// Extras SmartPOS turns on per company; the owner's app shows only these.
+export type FeatureKey = "services" | "delivery" | "floorMap" | "kitchen";
+export type CompanyFeatures = Record<FeatureKey, boolean>;
+
 export interface CompanyTypeResponse {
   id: string;
+  // Missing on servers from before extras could be switched.
+  features?: Partial<CompanyFeatures> | null;
   createdAt: string;
   updatedAt: string;
   code: string;

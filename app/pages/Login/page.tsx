@@ -18,44 +18,44 @@ import { useState } from "react";
 import useAuthStore from "@/stores/auth/authstore";
 import toast from "react-hot-toast";
 import Logo from "@/app/components/Logo";
+import { homeForRole } from "@/app/components/RoleGate";
+import DeviceAccess from "@/app/pages/Login/DeviceAccess";
+import { browserDevice, checkBrowserDevice, type BrowserDeviceStatus } from "@/stores/device/browserDevice";
 
 export default function LoginPage() {
   const router = useRouter();
-  const deviceId = "string";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const login = useAuthStore((state: any) => state.login);
+  const login = useAuthStore((state) => state.login);
+  // Set when an owner tried to sign in on a browser that isn't approved yet.
+  const [deviceStatus, setDeviceStatus] = useState<BrowserDeviceStatus | null>(null);
 
-const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    const { deviceId } = browserDevice();
 
-  try {
-    const loggedUser = await login({
-      deviceId,
-      email,
-      password,
-    });
-
-    // console.log("LOGGED USER:", loggedUser);
-    // console.log("ROLE:", loggedUser.role);
-
-    toast.success("Login successful!");
-
-    if (loggedUser.role?.toUpperCase() === "SUPERADMIN") {
-      router.push("/admin");
-    } else {
-      router.push("/");
+    try {
+      const loggedUser = await login({ deviceId, email, password });
+      toast.success("Login successful!");
+      router.push(homeForRole(loggedUser.role));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Login failed";
+      // Right password, but this browser isn't an approved device of the company.
+      if (message === "Device not found") {
+        setDeviceStatus(await checkBrowserDevice(deviceId).catch(() => "UNKNOWN" as const));
+      } else if (message === "Employees must login using PIN") {
+        toast.error("Workers sign in with their PIN in the SmartPOS app.");
+      } else {
+        toast.error(message);
+      }
+    } finally {
+      setLoading(false);
     }
-  } catch (error: any) {
-    toast.error(error.message || "Login failed");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const highlights = [
     { icon: BarChart3, label: "Real-time sales & reports" },
@@ -132,6 +132,8 @@ const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
                 Enter your details to access your SmartPOS workspace.
               </p>
             </div>
+
+            {deviceStatus && <DeviceAccess status={deviceStatus} onStatus={setDeviceStatus} />}
 
             <form className="space-y-5" onSubmit={handleLogin}>
               <div>

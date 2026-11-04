@@ -10,7 +10,8 @@ export interface superadminType
   createdAt: string,
   updatedAt: string,
   employee: null,
-  company: null,
+  // The owner's company; none for the super admin.
+  company: SignedInCompany | null,
   name: string,
   email: string,
   phone: string,
@@ -20,4 +21,17 @@ export interface superadminType
   active: true,
   mustChangePassword: true,
   lastLoginAt: string
+}
+
+export interface SignedInCompany {
+  id: string;
+  code: string;
+  name: string;
+  logo: string | null;
+  email: string;
+  phone_number: string;
+  location: string;
+  type: string;
+  // Extras SmartPOS turned on for the company.
+  features?: { services?: boolean; delivery?: boolean; floorMap?: boolean; kitchen?: boolean } | null;
 }

@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { industryOf } from "@/app/admin/tabs/companies/components/FetchCompany";
 import EditCompany from "@/app/admin/tabs/companies/components/EditCompany";
+import CompanyFeatures from "@/app/admin/tabs/companies/components/CompanyFeatures";
 
 const formatDate = (value?: string, withTime = false) => {
   const date = value ? new Date(value) : null;
@@ -339,6 +340,8 @@ export default function CompanyDetailPage() {
               ))}
             </dl>
           </section>
+
+          <CompanyFeatures key={company.id} companyId={company.id} initial={company.features} />
 
           {/* Operations — not provided by the API yet */}
           <section className="rounded-2xl border border-ink/12 bg-white shadow-xs">

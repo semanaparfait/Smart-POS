@@ -4,6 +4,7 @@ import type {
   CompanyType,
   CompanyTypePayload,
   CompanyTypeResponse,
+  CompanyFeatures,
 } from "@/stores/companies/companyTypes";
 import useAuthStore from "@/stores/auth/authstore";
 
@@ -18,6 +19,8 @@ const useCompanyStore = create<{
   updateCompany: (id: string, company: Partial<CompanyTypePayload>) => Promise<CompanyTypeResponse>;
   deleteCompany: (id: string) => Promise<void>;
   fetchSingleCompany: (id: string) => Promise<CompanyTypeResponse | null>;
+  // Turns extras on or off; returns all of them as saved.
+  setFeatures: (id: string, changes: Partial<CompanyFeatures>) => Promise<CompanyFeatures>;
 }>((set, get) => ({
   companies: [],
 
@@ -140,7 +143,27 @@ const useCompanyStore = create<{
 
     const resData = await response.json();
     return resData.data ?? resData;
-  }
+  },
+
+  setFeatures: async (id, changes) => {
+    if (!API_URL) throw new Error("API_URL is not defined");
+
+    const response = await fetch(`${API_URL}/api/v1/companies/${id}/features`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getAuthToken()}`,
+      },
+      body: JSON.stringify(changes),
+    });
+
+    const resData = await response.json().catch(() => null);
+    if (!response.ok) {
+      const message = Array.isArray(resData?.message) ? resData.message.join(", ") : resData?.message;
+      throw new Error(message || "Could not save the extras");
+    }
+    return resData.features as CompanyFeatures;
+  },
 }));
 
 export default useCompanyStore;
