@@ -82,7 +82,7 @@ const useCompanyStore = create<{
     const token = getAuthToken();
 
     const response = await fetch(`${API_URL}/api/v1/companies/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`, // Added auth protection
@@ -107,7 +107,7 @@ const useCompanyStore = create<{
 
     const token = getAuthToken();
 
-    const response = await fetch(`${API_URL}/api/v1/companies/${id}`, {
+    const response = await fetch(`${API_URL}/api/v1/companies/${id}/delete`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

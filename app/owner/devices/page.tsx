@@ -1,20 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import toast from "react-hot-toast";
-import { Bike, ChefHat, Check, Loader2, MonitorSmartphone, Store, Tv, X, type LucideIcon } from "lucide-react";
+import { Check, Loader2, MonitorSmartphone, Power, RotateCw, Trash2, X } from "lucide-react";
 import { ownerRequest, useOwnerData } from "@/stores/owner/api";
 import type { Device, DeviceKind } from "@/app/owner/types";
-import { Badge, Card, EmptyState, ErrorState, PageHeader, Skeleton, Tabs, formatDate, timeAgo } from "@/app/owner/components/ui";
-
-const KINDS: Record<DeviceKind, { label: string; icon: LucideIcon; text: string }> = {
-  POS_TERMINAL: { label: "Till", icon: Store, text: "Sells, takes payments" },
-  KITCHEN_DISPLAY: { label: "Kitchen display", icon: ChefHat, text: "Shows orders to prepare" },
-  CUSTOMER_DISPLAY: { label: "Customer display", icon: Tv, text: "Shows the customer their bill" },
-  RIDER_PHONE: { label: "Rider phone", icon: Bike, text: "A rider's deliveries" },
-};
-
-type Filter = "all" | "waiting" | "approved" | "off";
+import { Badge, Card, EmptyState, ErrorState, PageHeader, SearchInput, Skeleton, formatDate, timeAgo } from "@/app/owner/components/ui";
+import { Button, LinkButton } from "@/app/owner/components/forms";
+import { DEVICES, KINDS, STATE_META, deviceState, type DeviceState } from "@/app/owner/devices/kinds";
 
 const isWaiting = (d: Device) => d.registrationStatus === "PENDING" || d.registrationStatus === "REQUESTED";
 const isApproved = (d: Device) => d.registrationStatus === "REGISTERED";
@@ -91,12 +85,26 @@ function WaitingDevice({ device, onDone }: { device: Device; onDone: () => void 
   );
 }
 
-function DeviceCard({ device }: { device: Device }) {
+function DeviceCard({ device, onChanged }: { device: Device; onChanged: () => void }) {
   const kind = KINDS[device.type ?? "POS_TERMINAL"] ?? KINDS.POS_TERMINAL;
   const Icon = kind.icon;
   const approved = isApproved(device);
+  const state = deviceState(device);
+  const [busy, setBusy] = useState<string | null>(null);
+  const run = async (key: string, path: string, init: RequestInit, done: string) => {
+    setBusy(key);
+    try {
+      await ownerRequest(path, init);
+      toast.success(done);
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save");
+    } finally {
+      setBusy(null);
+    }
+  };
   return (
-    <div className={`rounded-2xl border border-ink/10 bg-white p-5 ${approved ? "" : "opacity-60"}`}>
+    <div className={`rounded-2xl border border-ink/10 bg-white p-5 ${approved ? "" : "opacity-70"}`}>
       <div className="flex items-start justify-between gap-3">
         <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${device.online ? "bg-ink text-lime" : "bg-ivory text-ink/50"}`}>
           <Icon className="h-5 w-5" />
@@ -110,7 +118,9 @@ function DeviceCard({ device }: { device: Device }) {
           <Badge tone="danger">{device.registrationStatus === "DISABLED" ? "Disabled" : "Turned away"}</Badge>
         )}
       </div>
-      <p className="mt-4 truncate font-bold text-ink">{device.deviceName}</p>
+      <Link href={`${DEVICES}/${device.id}`} className="mt-4 block truncate font-bold text-ink hover:underline">
+        {device.deviceName}
+      </Link>
       <p className="text-xs text-ink/55">
         {kind.label} · {kind.text}
       </p>
@@ -119,8 +129,42 @@ function DeviceCard({ device }: { device: Device }) {
         <span className="font-semibold text-ink">{device.currentUser?.name ?? "Nobody"}</span>
       </div>
       <div className="mt-1.5 flex items-center justify-between text-xs">
+        <span className="text-ink/45">Last activity</span>
+        <span className="truncate pl-2 font-semibold text-ink">{device.lastActivityAt ? timeAgo(device.lastActivityAt) : "None"}</span>
+      </div>
+      <div className="mt-1.5 flex items-center justify-between text-xs">
         <span className="text-ink/45">Added</span>
         <span className="font-semibold text-ink">{formatDate(device.createdAt)}</span>
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-1 border-t border-ink/6 pt-3">
+        <span className="truncate font-mono text-[10px] text-ink/40">{device.deviceId}</span>
+        <div className="flex gap-1">
+          {state !== "rejected" && (
+            <Button
+              small
+              tone="quiet"
+              icon={Power}
+              busy={busy === "toggle"}
+              aria-label={`${state === "disabled" ? "Enable" : "Disable"} ${device.deviceName}`}
+              title={state === "disabled" ? "Enable" : "Disable"}
+              className="px-2.5"
+              onClick={() => run("toggle", `/devices/${device.id}/${state === "disabled" ? "enable" : "disable"}`, { method: "PATCH" }, `${device.deviceName} ${state === "disabled" ? "enabled" : "disabled"}`)}
+            />
+          )}
+          <Button
+            small
+            tone="quiet"
+            icon={Trash2}
+            busy={busy === "delete"}
+            aria-label={`Delete ${device.deviceName}`}
+            title="Delete"
+            className="px-2.5 text-rose-600"
+            onClick={() => run("delete", `/devices/${device.id}/delete`, { method: "DELETE" }, `${device.deviceName} deleted`)}
+          />
+          <LinkButton small tone="outline" href={`${DEVICES}/${device.id}`}>
+            Open
+          </LinkButton>
+        </div>
       </div>
     </div>
   );
@@ -128,24 +172,63 @@ function DeviceCard({ device }: { device: Device }) {
 
 export default function OwnerDevices() {
   const { data, loading, error, reload } = useOwnerData<Device[]>("/devices");
-  const [filter, setFilter] = useState<Filter>("all");
+  const [state, setState] = useState<"all" | DeviceState>("all");
+  const [search, setSearch] = useState("");
 
   if (error) return <ErrorState message={error} onRetry={reload} />;
 
   const all = data ?? [];
   const waiting = all.filter(isWaiting);
   const decided = all.filter((d) => !isWaiting(d));
+  const counts = { active: 0, pending: 0, disabled: 0, rejected: 0 } as Record<DeviceState, number>;
+  for (const d of all) counts[deviceState(d)] += 1;
+  const q = search.trim().toLowerCase();
   const visible = decided.filter(
-    (d) => filter === "all" || (filter === "approved" ? isApproved(d) : filter === "off" ? !isApproved(d) : false),
+    (d) =>
+      (state === "all" || deviceState(d) === state) &&
+      (!q || [d.deviceName, d.deviceOs, d.deviceId, d.currentUser?.name].some((v) => v?.toLowerCase().includes(q))),
   );
+  const online = all.filter((d) => d.online).length;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Equipment"
+        eyebrow="Settings"
         title="Devices"
-        description="Tills, kitchen and customer displays, rider phones, and the browsers you sign in on."
+        description="Approve new tills, kitchen and customer displays, and control which ones can be used."
+        actions={
+          <Button tone="outline" icon={RotateCw} onClick={reload}>
+            Refresh
+          </Button>
+        }
       />
+
+      <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-ink/10 bg-white lg:grid-cols-5">
+        <button type="button" onClick={() => setState("all")} className={`p-5 text-left ${state === "all" ? "bg-ink text-white" : "hover:bg-ivory/60"}`}>
+          <p className={`text-xs font-semibold ${state === "all" ? "text-white/60" : "text-ink/55"}`}>All devices</p>
+          <p className="mt-1 text-3xl font-extrabold">{all.length}</p>
+          <p className={`text-[11px] ${state === "all" ? "text-lime" : "text-ink/45"}`}>{online} online now</p>
+        </button>
+        {(["active", "pending", "disabled", "rejected"] as DeviceState[]).map((s) => {
+          const pct = all.length ? Math.round((counts[s] / all.length) * 100) : 0;
+          const on = state === s;
+          return (
+            <button key={s} type="button" onClick={() => setState(on ? "all" : s)} className={`border-l border-ink/6 p-5 text-left ${on ? "bg-ivory" : "hover:bg-ivory/60"}`}>
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-ink/60">
+                {STATE_META[s].label}
+                {s === "pending" && counts[s] > 0 && <span className="h-2 w-2 rounded-full bg-lime" />}
+              </p>
+              <p className="mt-1 text-2xl font-extrabold text-ink">
+                {counts[s]} <span className="text-xs font-semibold text-ink/40">{pct}%</span>
+              </p>
+              <p className="truncate text-[11px] text-ink/45">{STATE_META[s].hint}</p>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-ivory">
+                <div className={`h-full ${STATE_META[s].bar}`} style={{ width: `${pct}%` }} />
+              </div>
+            </button>
+          );
+        })}
+      </div>
 
       {loading ? (
         <Skeleton className="h-40" />
@@ -161,15 +244,7 @@ export default function OwnerDevices() {
         )
       )}
 
-      <Tabs
-        options={[
-          { value: "all", label: "All", count: decided.length },
-          { value: "approved", label: "Approved", count: decided.filter(isApproved).length },
-          { value: "off", label: "Disabled or turned away", count: decided.filter((d) => !isApproved(d)).length },
-        ]}
-        value={filter === "waiting" ? "all" : filter}
-        onChange={setFilter}
-      />
+      <SearchInput value={search} onChange={setSearch} placeholder="Name, system, device ID or worker" />
 
       {loading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -184,7 +259,7 @@ export default function OwnerDevices() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((d) => (
-            <DeviceCard key={d.id} device={d} />
+            <DeviceCard key={d.id} device={d} onChanged={reload} />
           ))}
         </div>
       )}

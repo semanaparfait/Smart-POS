@@ -12,7 +12,7 @@ import type {
  *   POST /api/v1/contact-messages        body: ContactMessagePayload
  */
 
-const postPublic = async (path: string, body: unknown) => {
+export const postPublic = async (path: string, body: unknown) => {
   if (!API_URL) throw new Error("API_URL is not defined");
 
   const response = await fetch(`${API_URL}${path}`, {
@@ -25,7 +25,7 @@ const postPublic = async (path: string, body: unknown) => {
     let message = response.statusText;
     try {
       const data = await response.json();
-      message = data.message || message;
+      message = (Array.isArray(data.message) ? data.message.join(". ") : data.message) || message;
     } catch {
       // response had no JSON body
     }

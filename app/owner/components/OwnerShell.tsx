@@ -3,14 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BedDouble, Bike, ChevronDown, LayoutDashboard, LogOut, Menu, Package, Settings, Users, Wallet, X, type LucideIcon } from "lucide-react";
+import { BedDouble, Bike, ChevronDown, LayoutDashboard, LogOut, Menu, Package, Settings, Trophy, Users, Wallet, X, type LucideIcon } from "lucide-react";
 import { LogoMark } from "@/app/components/Logo";
 import useAuthStore from "@/stores/auth/authstore";
 import { Avatar } from "@/app/owner/components/ui";
 import BookingAlerts from "@/app/owner/bookings/BookingAlerts";
 
-type Extra = "services" | "delivery";
-type SubItem = { label: string; href: string; extra?: Extra };
+type Extra = "services" | "delivery" | "kitchen";
+// `ridersOnly`: shown when the company has its own riders.
+type SubItem = { label: string; href: string; extra?: Extra; ridersOnly?: boolean };
 // A link has an href; a group has children instead, like the app's menu.
 type NavItem = { label: string; icon: LucideIcon; href?: string; children?: SubItem[]; extra?: Extra };
 
@@ -19,7 +20,10 @@ type NavItem = { label: string; icon: LucideIcon; href?: string; children?: SubI
 const SECTIONS: { title: string; items: NavItem[] }[] = [
   {
     title: "Overview",
-    items: [{ label: "Dashboard", href: "/owner", icon: LayoutDashboard }],
+    items: [
+      { label: "Dashboard", href: "/owner", icon: LayoutDashboard },
+      { label: "Winner", href: "/owner/winner", icon: Trophy },
+    ],
   },
   {
     title: "Management",
@@ -48,7 +52,15 @@ const SECTIONS: { title: string; items: NavItem[] }[] = [
           { label: "What you offer", href: "/owner/services" },
         ],
       },
-      { label: "Deliveries", href: "/owner/deliveries", icon: Bike, extra: "delivery" },
+      {
+        label: "Deliveries",
+        icon: Bike,
+        extra: "delivery",
+        children: [
+          { label: "All deliveries", href: "/owner/deliveries" },
+          { label: "Riders", href: "/owner/deliveries/riders", ridersOnly: true },
+        ],
+      },
       { label: "Workers", href: "/owner/workers", icon: Users },
       {
         label: "Finance",
@@ -72,8 +84,12 @@ const SECTIONS: { title: string; items: NavItem[] }[] = [
         label: "Settings",
         icon: Settings,
         children: [
-          { label: "Devices", href: "/owner/devices" },
-          { label: "Company", href: "/owner/company" },
+          { label: "Device information", href: "/owner/devices" },
+          { label: "Company settings", href: "/owner/settings/details" },
+          { label: "Delivery", href: "/owner/settings/delivery", extra: "delivery" },
+          { label: "Kitchen", href: "/owner/settings/kitchen", extra: "kitchen" },
+          { label: "Profile", href: "/owner/company" },
+          { label: "Change password", href: "/owner/settings/password" },
         ],
       },
     ],
@@ -114,7 +130,7 @@ export default function OwnerShell({ children }: { children: React.ReactNode }) 
   const [opened, setOpened] = useState<string[]>([]);
 
   const item = ({ label, href, icon: Icon, children: all }: NavItem) => {
-    const children = all?.filter((c) => extraOn(c.extra));
+    const children = all?.filter((c) => extraOn(c.extra) && (!c.ridersOnly || !!company?.deliveryRiders));
     if (children) {
       const holdsPage = children.some((c) => c.href === current?.href);
       const open = holdsPage || opened.includes(label);

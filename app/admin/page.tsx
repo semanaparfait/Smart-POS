@@ -1,449 +1,425 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
 import {
-  Building2,
-  Monitor,
-  Users,
-  CreditCard,
-  ShoppingCart,
-  ClipboardList,
-  TrendingUp,
-  TrendingDown,
-  CheckCircle2,
-  AlertCircle,
+  AlertTriangle,
   ArrowUpRight,
+  Ban,
+  Banknote,
+  Building2,
+  Check,
+  ChevronRight,
+  CreditCard,
+  Inbox,
+  Monitor,
+  MonitorOff,
+  Plus,
+  Receipt,
+  RotateCw,
+  TrendingDown,
+  type LucideIcon,
 } from "lucide-react";
+import { BILLING_META, PLAN_LABEL, attentionOf, usePlatform, type PlatformCompany } from "@/app/admin/components/Platform";
+import { industryOf } from "@/app/admin/tabs/companies/components/FetchCompany";
+import { dayKey, rwf, shortRwf, timeAgo } from "@/app/owner/components/ui";
 
-const stats = [
-  {
-    title: "Total Companies",
-    value: "248",
-    change: "+12%",
-    description: "vs last month",
-    icon: Building2,
-    positive: true,
-  },
-  {
-    title: "Active POS Devices",
-    value: "1,172",
-    change: "91%",
-    description: "online",
-    icon: Monitor,
-    positive: true,
-  },
-  {
-    title: "Platform Revenue",
-    value: "24.8M RWF",
-    change: "+14.8%",
-    description: "vs last month",
-    icon: CreditCard,
-    positive: true,
-  },
-  {
-    title: "Total Users",
-    value: "4,892",
-    change: "+10%",
-    description: "vs last month",
-    icon: Users,
-    positive: true,
-  },
-  {
-    title: "Transactions Today",
-    value: "18,492",
-    change: "+16.3%",
-    description: "vs yesterday",
-    icon: ShoppingCart,
-    positive: true,
-  },
-  {
-    title: "Pending Requests",
-    value: "27",
-    change: "-5%",
-    description: "vs last week",
-    icon: ClipboardList,
-    positive: false,
-  },
-];
+const greeting = (hour: number) => (hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening");
+const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
 
-const devices: [string, string, string, boolean][] = [
-  ["POS-001", "Lex Hotel", "Downtown", true],
-  ["POS-002", "Pearl Shop", "Kimihurura", true],
-  ["POS-003", "Kigali Bar", "Kacyiru", false],
-  ["POS-004", "Royal Restaurant", "Nyamirambo", true],
-  ["POS-005", "Sky Lounge", "Remeraa", true],
-];
-
-const installationRequests = [
-  ["Lex Corp Hotel", "New Installation", "Pending", "Apr 29, 2026"],
-  ["Pearl Shop", "Device Setup", "Review", "Apr 28, 2026"],
-  ["Kigali Bar", "New Installation", "Approve", "Apr 28, 2026"],
-  ["Downtown Hotel", "Device Setup", "Pending", "Apr 27, 2026"],
-  ["Royal Restaurant", "Maintenance", "Review", "Apr 26, 2026"],
-];
-
-const recentTransactions = [
-  ["Lex Hotel", "Downtown", "45,000 RWF", "10:22 AM"],
-  ["Pearl Shop", "Kimihurura", "12,500 RWF", "10:18 AM"],
-  ["Kigali Bar", "Kacyiru", "80,000 RWF", "09:54 AM"],
-  ["Royal Restaurant", "Nyamirambo", "36,000 RWF", "09:32 AM"],
-  ["Sky Lounge", "Remera", "22,500 RWF", "09:12 AM"],
-];
-
-export default function Page() {
+function Kpi({ icon: Icon, label, value, hint, foot, wide }: { icon: LucideIcon; label: string; value: string; hint: string; foot?: React.ReactNode; wide?: boolean }) {
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Good morning, Shema 👋
-        </h1>
-
-        <p className="mt-1 text-sm text-gray-500">
-          Here's your complete SmartPOS platform overview.
-        </p>
+    <div className={`flex flex-col rounded-2xl border border-ink/10 bg-white p-5 shadow-xs ${wide ? "lg:col-span-3" : "lg:col-span-2"} 2xl:col-span-1`}>
+      <div className="flex items-center justify-between">
+        <p className="text-[13px] font-medium text-ink/60">{label}</p>
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink text-lime">
+          <Icon className="h-4 w-4" />
+        </span>
       </div>
+      <p className="mt-3 text-[26px] font-bold leading-none tracking-[-0.02em] text-ink tabular-nums">{value}</p>
+      <p className="mt-2 text-xs text-ink/55">{hint}</p>
+      {foot && <div className="mt-4 border-t border-ink/6 pt-3 text-xs text-ink/60">{foot}</div>}
+    </div>
+  );
+}
 
-      {/* Statistics */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
+function Card({ title, sub, action, children, className = "" }: { title: string; sub?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
+  return (
+    <section className={`rounded-2xl border border-ink/10 bg-white shadow-xs ${className}`}>
+      <header className="flex items-start justify-between gap-3 border-b border-ink/6 px-5 py-4">
+        <div>
+          <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
+          {sub && <p className="mt-0.5 text-xs text-ink/55">{sub}</p>}
+        </div>
+        {action}
+      </header>
+      {children}
+    </section>
+  );
+}
 
+// Paid sales per day across every company. One series, so no legend: the title names it.
+function SalesChart({ days }: { days: { day: string; total: number; orders: number }[] }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const W = 720;
+  const H = 240;
+  const pad = { l: 52, r: 8, t: 12, b: 28 };
+  const max = Math.max(1, ...days.map((d) => d.total));
+  const step = Math.pow(10, Math.floor(Math.log10(max)));
+  const top = Math.ceil(max / step) * step;
+  const slot = (W - pad.l - pad.r) / days.length;
+  const barW = Math.max(4, slot - 6);
+  const y = (v: number) => pad.t + (1 - v / top) * (H - pad.t - pad.b);
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => f * top);
+  const h = hover !== null ? days[hover] : null;
+
+  return (
+    <div className="relative px-5 pb-5 pt-4">
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-64 w-full" role="img" aria-label="Paid sales per day for the last 30 days" onMouseLeave={() => setHover(null)}>
+        {ticks.map((t) => (
+          <g key={t}>
+            <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} stroke="currentColor" className="text-ink/8" />
+            <text x={pad.l - 8} y={y(t) + 4} textAnchor="end" className="fill-ink/45 text-[11px] tabular-nums">
+              {shortRwf(t)}
+            </text>
+          </g>
+        ))}
+        {days.map((d, i) => {
+          const x = pad.l + i * slot + (slot - barW) / 2;
+          const top = y(d.total);
+          const height = Math.max(0, H - pad.b - top);
+          const r = Math.min(4, barW / 2, height);
           return (
-            <div
-              key={stat.title}
-              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50">
-                  <Icon className="text-green-600" size={20} />
-                </div>
-
-                <ArrowUpRight size={17} className="text-gray-400" />
-              </div>
-
-              <p className="mt-4 text-sm text-gray-500">{stat.title}</p>
-
-              <h2 className="mt-1 text-2xl font-bold text-gray-900">
-                {stat.value}
-              </h2>
-
-              <div className="mt-2 flex items-center gap-2 text-xs">
-                {stat.positive ? (
-                  <TrendingUp size={14} className="text-green-600" />
-                ) : (
-                  <TrendingDown size={14} className="text-red-500" />
-                )}
-
-                <span
-                  className={
-                    stat.positive
-                      ? "font-medium text-green-600"
-                      : "font-medium text-red-500"
-                  }
-                >
-                  {stat.change}
-                </span>
-
-                <span className="text-gray-400">{stat.description}</span>
-              </div>
-            </div>
+            <g key={d.day}>
+              {height > 0 && (
+                <path
+                  d={`M${x},${H - pad.b} V${top + r} Q${x},${top} ${x + r},${top} H${x + barW - r} Q${x + barW},${top} ${x + barW},${top + r} V${H - pad.b} Z`}
+                  className={hover === i ? "fill-lime" : hover === null ? "fill-ink" : "fill-ink/35"}
+                />
+              )}
+              {/* A hit area taller than the bar */}
+              <rect x={pad.l + i * slot} y={pad.t} width={slot} height={H - pad.t - pad.b} fill="transparent" onMouseEnter={() => setHover(i)} />
+              {i % 5 === 0 || i === days.length - 1 ? (
+                <text x={x + barW / 2} y={H - 8} textAnchor="middle" className="fill-ink/45 text-[11px]">
+                  {new Date(`${d.day}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                </text>
+              ) : null}
+            </g>
           );
         })}
-      </div>
+      </svg>
+      {h && hover !== null && (
+        <div
+          className="pointer-events-none absolute top-4 z-10 -translate-x-1/2 rounded-xl bg-ink px-3 py-2 text-xs text-white shadow-lg"
+          style={{ left: `calc(20px + (100% - 40px) * ${(pad.l + (hover + 0.5) * slot) / W})` }}
+        >
+          <p className="font-semibold">{new Date(`${h.day}T12:00:00`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}</p>
+          <p className="mt-0.5 tabular-nums text-white/80">
+            {rwf(h.total)} · {h.orders.toLocaleString()} orders
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
-      {/* Revenue + Platform Status */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        {/* Revenue */}
-        <div className="xl:col-span-2 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-semibold text-gray-900">Revenue Overview</h2>
+function AttentionRow({ icon: Icon, title, detail, count, href, danger }: { icon: LucideIcon; title: string; detail: string; count: number; href: string; danger?: boolean }) {
+  const clear = count === 0;
+  return (
+    <Link href={href} className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-ivory/70">
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${clear ? "bg-emerald-50 text-emerald-600" : danger ? "bg-rose-50 text-rose-600" : "bg-lime/40 text-ink"}`}>
+        {clear ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium text-ink">{title}</span>
+        <span className="block truncate text-xs text-ink/55">{clear ? "All clear" : detail}</span>
+      </span>
+      {!clear && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${danger ? "bg-rose-600 text-white" : "bg-ink text-lime"}`}>{count}</span>}
+      <ChevronRight className="h-4 w-4 text-ink/30" />
+    </Link>
+  );
+}
 
-              <p className="text-sm text-gray-500">Total platform revenue</p>
-            </div>
+function CompanyMark({ c }: { c: PlatformCompany }) {
+  return c.logo ? (
+    // eslint-disable-next-line @next/next/no-img-element -- logos come from arbitrary hosts
+    <img src={c.logo} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-ink/10" />
+  ) : (
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink text-[11px] font-semibold text-lime">
+      {c.name
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0]?.toUpperCase())
+        .join("")}
+    </span>
+  );
+}
 
-            <select className="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none">
-              <option>Last 7 days</option>
-              <option>Last 30 days</option>
-              <option>Last 12 months</option>
-            </select>
+type Sort = "month" | "today" | "newest";
+
+export default function AdminDashboard() {
+  const { data, loading, error, reload } = usePlatform();
+  const [now] = useState(() => Date.now());
+  const [sort, setSort] = useState<Sort>("month");
+  const [all, setAll] = useState(false);
+
+  if (!data) {
+    return (
+      <div className="space-y-6">
+        <div className="h-14 w-72 animate-pulse rounded-xl bg-ink/6" />
+        {error && !loading ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+            {error}{" "}
+            <button type="button" onClick={reload} className="font-semibold underline">
+              Try again
+            </button>
           </div>
-
-          {/* Simple chart */}
-          <div className="mt-8 flex h-64 items-end gap-4 border-b border-gray-100 px-4">
-            {[35, 48, 42, 65, 58, 75, 88].map((height, index) => (
-              <div
-                key={index}
-                className="flex flex-1 flex-col items-center justify-end gap-2"
-              >
-                <div
-                  className="w-full max-w-12 rounded-t-md bg-green-500"
-                  style={{ height: `${height}%` }}
-                />
-
-                <span className="text-xs text-gray-400">Apr {23 + index}</span>
-              </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }, (_, i) => (
+              <div key={i} className="h-40 animate-pulse rounded-2xl bg-white" />
             ))}
           </div>
-        </div>
-
-        {/* Platform Status */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-semibold text-gray-900">Platform Status</h2>
-
-              <p className="mt-1 text-xs text-green-600">
-                ● All systems operational
-              </p>
-            </div>
-
-            <CheckCircle2 className="text-green-500" size={22} />
-          </div>
-
-          <div className="mt-6 space-y-4">
-            {[
-              "API Server",
-              "Database",
-              "POS Service",
-              "Mobile App",
-              "Payment Gateway",
-            ].map((service) => (
-              <div
-                key={service}
-                className="flex items-center justify-between border-b border-gray-100 pb-3"
-              >
-                <span className="text-sm text-gray-600">{service}</span>
-
-                <span className="flex items-center gap-2 text-xs font-medium text-green-600">
-                  <span className="h-2 w-2 rounded-full bg-green-500" />
-                  Healthy
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
+    );
+  }
 
-      {/* Requests + Device Health */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        {/* Installation Requests */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-gray-100 p-5">
-            <div>
-              <h2 className="font-semibold text-gray-900">
-                Installation Requests
-              </h2>
+  const t = data.totals;
+  const today = new Date(now);
+  // Every one of the last 30 days, with nothing sold shown as zero.
+  const byDay = new Map(data.salesByDay.map((d) => [d.day, d]));
+  const days = Array.from({ length: 30 }, (_, i) => {
+    const key = dayKey(new Date(now - (29 - i) * 86_400_000));
+    return byDay.get(key) ?? { day: key, total: 0, orders: 0 };
+  });
+  const total30 = days.reduce((s, d) => s + d.total, 0);
+  const orders30 = days.reduce((s, d) => s + d.orders, 0);
+  const best = days.reduce((b, d) => (d.total > b.total ? d : b), days[0]);
+  const dayOfMonth = today.getDate();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const pace = Math.round((t.salesMonth / dayOfMonth) * daysInMonth);
+  const attention = attentionOf(data, now);
 
-              <p className="text-sm text-gray-500">
-                Recent requests from businesses
-              </p>
-            </div>
+  const sorted = [...data.companies].sort((a, b) =>
+    sort === "today" ? b.salesToday - a.salesToday : sort === "newest" ? b.createdAt.localeCompare(a.createdAt) : b.salesMonth - a.salesMonth,
+  );
+  const shown = all ? sorted : sorted.slice(0, 8);
 
-            <button className="text-sm font-medium text-green-600">
-              View all
-            </button>
-          </div>
+  const industries = [...data.companies.reduce((m, c) => {
+    const key = industryOf(c.type).label;
+    const row = m.get(key) ?? { label: key, icon: industryOf(c.type).icon, count: 0, sales: 0 };
+    m.set(key, { ...row, count: row.count + 1, sales: row.sales + c.salesMonth });
+    return m;
+  }, new Map<string, { label: string; icon: React.ElementType; count: number; sales: number }>()).values()].sort((a, b) => b.sales - a.sales || b.count - a.count);
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-xs uppercase text-gray-400">
-                <tr>
-                  <th className="px-5 py-3">Business</th>
-                  <th className="px-5 py-3">Type</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Date</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {installationRequests.map((request) => (
-                  <tr key={request[0]} className="border-t border-gray-100">
-                    <td className="px-5 py-4 font-medium text-gray-800">
-                      {request[0]}
-                    </td>
-
-                    <td className="px-5 py-4 text-gray-500">{request[1]}</td>
-
-                    <td className="px-5 py-4">
-                      <span className="rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-600">
-                        {request[2]}
-                      </span>
-                    </td>
-
-                    <td className="px-5 py-4 text-gray-500">{request[3]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Device Health */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-gray-100 p-5">
-            <div>
-              <h2 className="font-semibold text-gray-900">POS Device Health</h2>
-
-              <p className="text-sm text-gray-500">Current device status</p>
-            </div>
-
-            <button className="text-sm font-medium text-green-600">
-              View all
-            </button>
-          </div>
-
-          <div className="divide-y divide-gray-100">
-            {devices.map(([device, business, branch, online]) => {
-              return (
-                <div
-                  key={device}
-                  className="grid grid-cols-4 items-center px-5 py-4 text-sm"
-                >
-                  <span className="font-medium text-gray-800">{device}</span>
-
-                  <span className="text-gray-500">{business}</span>
-
-                  <span className="text-gray-500">{branch}</span>
-
-                  <span
-                    className={
-                      online
-                        ? "flex items-center gap-2 text-xs font-medium text-green-600"
-                        : "flex items-center gap-2 text-xs font-medium text-red-500"
-                    }
-                  >
-                    <span
-                      className={
-                        online
-                          ? "h-2 w-2 rounded-full bg-green-500"
-                          : "h-2 w-2 rounded-full bg-red-500"
-                      }
-                    />
-
-                    {online ? "Online" : "Offline"}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Transactions + Quick Activity */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        {/* Transactions */}
-        <div className="xl:col-span-2 rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-gray-100 p-5">
-            <div>
-              <h2 className="font-semibold text-gray-900">
-                Recent Transactions
-              </h2>
-
-              <p className="text-sm text-gray-500">
-                Latest transactions across the platform
-              </p>
-            </div>
-
-            <button className="text-sm font-medium text-green-600">
-              View all
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-xs uppercase text-gray-400">
-                <tr>
-                  <th className="px-5 py-3">Business</th>
-                  <th className="px-5 py-3">Branch</th>
-                  <th className="px-5 py-3">Amount</th>
-                  <th className="px-5 py-3">Time</th>
-                  <th className="px-5 py-3">Status</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {recentTransactions.map((transaction) => (
-                  <tr
-                    key={`${transaction[0]}-${transaction[3]}`}
-                    className="border-t border-gray-100"
-                  >
-                    <td className="px-5 py-4 font-medium text-gray-800">
-                      {transaction[0]}
-                    </td>
-
-                    <td className="px-5 py-4 text-gray-500">
-                      {transaction[1]}
-                    </td>
-
-                    <td className="px-5 py-4 font-medium text-gray-800">
-                      {transaction[2]}
-                    </td>
-
-                    <td className="px-5 py-4 text-gray-500">
-                      {transaction[3]}
-                    </td>
-
-                    <td className="px-5 py-4">
-                      <span className="flex w-fit items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-600">
-                        <CheckCircle2 size={12} />
-                        Paid
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Recent Activity</h2>
-
-            <button className="text-sm font-medium text-green-600">
-              View all
-            </button>
-          </div>
-
-          <div className="mt-5 space-y-5">
-            {[
-              ["New company registered", "Lex Corp Hotel", "2 min ago"],
-              ["POS device went offline", "POS-003", "12 min ago"],
-              ["Installation approved", "Kigali Bar", "24 min ago"],
-              ["New user created", "John Doe", "1 hour ago"],
-              ["Payment received", "80,000 RWF", "2 hours ago"],
-            ].map(([title, detail, time]) => (
-              <div key={title} className="flex gap-3">
-                <div className="mt-1 h-2.5 w-2.5 rounded-full bg-green-500" />
-
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-800">{title}</p>
-
-                  <p className="text-xs text-gray-500">{detail}</p>
-                </div>
-
-                <span className="whitespace-nowrap text-[11px] text-gray-400">
-                  {time}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Warning */}
-      <div className="flex items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 p-4">
-        <AlertCircle className="text-orange-500" size={20} />
-
+  return (
+    <div className="space-y-6 pb-10">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-orange-800">
-            3 POS devices require attention
+          <p className="text-[13px] font-medium text-ink/55">
+            {today.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </p>
-
-          <p className="text-xs text-orange-700">
-            Check device health to review offline or inactive devices.
-          </p>
+          <h1 className="mt-1 text-[26px] font-bold tracking-[-0.02em] text-ink">{greeting(today.getHours())}</h1>
+          <p className="mt-1 text-sm text-ink/60">How every business on SmartPOS is doing. Updates every minute.</p>
         </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={reload}
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-sm font-medium text-ink/75 ring-1 ring-inset ring-ink/12 transition-colors hover:bg-ivory"
+          >
+            <RotateCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </button>
+          <Link href="/admin/tabs/companies" className="inline-flex h-10 items-center gap-2 rounded-xl bg-lime px-4 text-sm font-semibold text-ink transition-colors hover:bg-lime-dark">
+            <Plus className="h-4 w-4" /> Add company
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6 2xl:grid-cols-5">
+        <Kpi icon={Banknote} label="Sales today" value={rwf(t.salesToday)} hint={`${t.ordersToday.toLocaleString()} orders across all companies`} foot={<>Average order {rwf(t.ordersToday ? t.salesToday / t.ordersToday : 0)}</>} />
+        <Kpi
+          icon={Receipt}
+          label="Sales this month"
+          value={rwf(t.salesMonth)}
+          hint={`On pace for ${rwf(pace)} by month end`}
+          foot={
+            <span className="flex items-center justify-between">
+              <span>Last month {rwf(t.salesLastMonth)}</span>
+              {t.salesLastMonth > 0 && (
+                <span className={`font-semibold ${pace >= t.salesLastMonth ? "text-emerald-700" : "text-rose-600"}`}>
+                  {pace >= t.salesLastMonth ? "+" : "−"}
+                  {Math.abs(pct(pace, t.salesLastMonth) - 100)}% pace
+                </span>
+              )}
+            </span>
+          }
+        />
+        <Kpi
+          icon={Building2}
+          label="Companies"
+          value={t.companies.toLocaleString()}
+          hint={`${t.activeCompanies} active · ${t.companies - t.activeCompanies} terminated`}
+          foot={<>{t.newThisMonth} joined this month · {t.users.toLocaleString()} sign-in accounts</>}
+        />
+        <Kpi
+          wide
+          icon={CreditCard}
+          label="Subscriptions"
+          value={rwf(t.monthlyRevenue ?? 0)}
+          hint="Expected each month from paying companies"
+          foot={
+            <span className="flex items-center justify-between">
+              <span>Collected this month {rwf(t.collectedThisMonth ?? 0)}</span>
+              {(t.overdue ?? 0) > 0 && <span className="font-semibold text-rose-600">{t.overdue} overdue</span>}
+            </span>
+          }
+        />
+        <Kpi
+          wide
+          icon={Monitor}
+          label="Devices online"
+          value={`${t.onlineDevices} / ${t.devices}`}
+          hint={`${pct(t.onlineDevices, t.devices)}% of all devices are on now`}
+          foot={
+            <div className="h-1.5 overflow-hidden rounded-full bg-ink/8">
+              <div className="h-full rounded-full bg-ink" style={{ width: `${pct(t.onlineDevices, t.devices)}%` }} />
+            </div>
+          }
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <Card
+          className="xl:col-span-2"
+          title="Paid sales, last 30 days"
+          sub={`${rwf(total30)} from ${orders30.toLocaleString()} orders · best day ${rwf(best.total)}`}
+          action={<span className="rounded-full bg-ivory px-2.5 py-1 text-[11px] font-medium text-ink/60 ring-1 ring-inset ring-ink/10">All companies</span>}
+        >
+          <SalesChart days={days} />
+        </Card>
+
+        <Card title="Needs attention" sub="Open one to deal with it">
+          <div className="divide-y divide-ink/6">
+            <AttentionRow icon={Inbox} title="New in the inbox" detail="Installation requests, messages, password help" count={t.newRequests ?? 0} href="/admin/tabs/inbox" />
+            <AttentionRow icon={CreditCard} title="Subscriptions overdue" detail={attention.overdue.map((c) => c.name).join(", ")} count={attention.overdue.length} href={attention.overdue[0] ? `/admin/tabs/companies/${attention.overdue[0].id}#subscription` : "/admin/tabs/companies"} danger />
+            <AttentionRow icon={Monitor} title="Devices waiting for approval" detail={attention.waitingDevices.map((c) => c.name).join(", ")} count={t.waitingDevices} href="/admin/tabs/devices" />
+            <AttentionRow icon={TrendingDown} title="No sales for over a week" detail={attention.quiet.map((c) => c.name).join(", ")} count={attention.quiet.length} href={attention.quiet[0] ? `/admin/tabs/companies/${attention.quiet[0].id}` : "/admin/tabs/companies"} danger />
+            <AttentionRow icon={MonitorOff} title="Companies with no device" detail={attention.noDevices.map((c) => c.name).join(", ")} count={attention.noDevices.length} href={attention.noDevices[0] ? `/admin/tabs/companies/${attention.noDevices[0].id}` : "/admin/tabs/companies"} />
+            <AttentionRow icon={Ban} title="Terminated companies" detail={attention.terminated.map((c) => c.name).join(", ")} count={attention.terminated.length} href={attention.terminated[0] ? `/admin/tabs/companies/${attention.terminated[0].id}` : "/admin/tabs/companies"} danger />
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <Card
+          className="xl:col-span-2"
+          title="Companies"
+          sub="Open a company to see everything in it"
+          action={
+            <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort companies" className="h-9 rounded-lg border border-ink/12 bg-white px-2.5 text-xs font-medium text-ink">
+              <option value="month">Most sales this month</option>
+              <option value="today">Most sales today</option>
+              <option value="newest">Newest first</option>
+            </select>
+          }
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[820px] text-sm">
+              <thead>
+                <tr className="border-b border-ink/6 text-left text-[11px] font-semibold uppercase tracking-[0.1em] text-ink/45">
+                  <th className="px-5 py-3">Company</th>
+                  <th className="px-3 py-3 text-right">Today</th>
+                  <th className="px-3 py-3 text-right">This month</th>
+                  <th className="px-3 py-3 text-right">Devices</th>
+                  <th className="px-3 py-3">Last sale</th>
+                  <th className="px-3 py-3">Subscription</th>
+                  <th className="px-5 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ink/6">
+                {shown.map((c) => (
+                  <tr key={c.id} className="group transition-colors hover:bg-ivory/60">
+                    <td className="px-5 py-3">
+                      <Link href={`/admin/tabs/companies/${c.id}`} className="flex items-center gap-3">
+                        <CompanyMark c={c} />
+                        <span className="min-w-0">
+                          <span className="block truncate font-semibold text-ink group-hover:underline">{c.name}</span>
+                          <span className="block truncate text-xs text-ink/50">
+                            {industryOf(c.type).label} · {c.location || "No location"}
+                          </span>
+                        </span>
+                        {!c.active && <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">Terminated</span>}
+                      </Link>
+                    </td>
+                    <td className="px-3 py-3 text-right tabular-nums">
+                      <span className="block font-medium text-ink">{rwf(c.salesToday)}</span>
+                      <span className="block text-xs text-ink/50">{c.ordersToday} orders</span>
+                    </td>
+                    <td className="px-3 py-3 text-right font-semibold tabular-nums text-ink">{rwf(c.salesMonth)}</td>
+                    <td className="px-3 py-3 text-right tabular-nums text-ink/70">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className={`h-2 w-2 rounded-full ${c.onlineDevices ? "bg-emerald-500" : "bg-ink/20"}`} />
+                        {c.onlineDevices} / {c.devices}
+                      </span>
+                      {c.waitingDevices > 0 && <span className="block text-[11px] font-medium text-ink">{c.waitingDevices} waiting</span>}
+                    </td>
+                    <td className="px-3 py-3 text-xs text-ink/60">{c.lastOrderAt ? timeAgo(c.lastOrderAt) : "Never"}</td>
+                    <td className="px-3 py-3">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${BILLING_META[c.billing ?? "NOT_SET"].cls}`}>{BILLING_META[c.billing ?? "NOT_SET"].label}</span>
+                      {c.plan && <span className="mt-0.5 block text-[11px] text-ink/45">{PLAN_LABEL[c.plan] ?? c.plan}</span>}
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <Link href={`/admin/tabs/companies/${c.id}`} aria-label={`Open ${c.name}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink/40 transition-colors hover:bg-white hover:text-ink hover:ring-1 hover:ring-ink/12">
+                        <ArrowUpRight className="h-4 w-4" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+                {!shown.length && (
+                  <tr>
+                    <td colSpan={7} className="px-5 py-8 text-center text-sm text-ink/55">
+                      No companies yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {sorted.length > 8 && (
+            <button type="button" onClick={() => setAll((v) => !v)} className="w-full border-t border-ink/6 px-5 py-3 text-center text-xs font-semibold text-ink/70 transition-colors hover:bg-ivory/70 hover:text-ink">
+              {all ? "Show fewer" : `Show all ${sorted.length} companies`}
+            </button>
+          )}
+        </Card>
+
+        <Card title="By industry" sub="Companies and their sales this month">
+          <ul className="divide-y divide-ink/6">
+            {industries.map(({ label, icon: Icon, count, sales }) => (
+              <li key={label} className="px-5 py-3">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink/6 text-ink/70">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span className="flex-1 text-sm font-medium text-ink">
+                    {label} <span className="text-xs font-normal text-ink/50">· {count}</span>
+                  </span>
+                  <span className="text-sm font-semibold tabular-nums text-ink">{rwf(sales)}</span>
+                </div>
+                <div className="ml-11 mt-2 h-1.5 overflow-hidden rounded-full bg-ink/8">
+                  <div className="h-full rounded-full bg-ink" style={{ width: `${pct(sales, t.salesMonth)}%` }} />
+                </div>
+              </li>
+            ))}
+            {!industries.length && (
+              <li className="flex items-center gap-2 px-5 py-4 text-sm text-ink/55">
+                <AlertTriangle className="h-4 w-4" /> No companies yet.
+              </li>
+            )}
+          </ul>
+        </Card>
       </div>
     </div>
   );

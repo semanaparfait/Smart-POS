@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, KeyRound, Plus, RotateCw, Search, UserCheck, UserX, Users, X } from "lucide-react";
+import { KeyRound, Plus, RotateCw, Search, UserCheck, UserX, Users, X } from "lucide-react";
 import useUserStore from "@/stores/users/userStore";
 import type { UserResponse } from "@/stores/users/userTypes";
 import FetchUsers, { UserSkeleton, roleOf } from "@/app/admin/tabs/users/components/FetchUsers";
-import AddUserForm from "@/app/admin/tabs/users/components/AddUserForm";
+import Link from "next/link";
 import {
   EmptyState,
   FilterChips,
@@ -26,7 +26,6 @@ export default function UsersPage() {
   const users = useUserStore((s) => s.users);
   const fetchUsers = useUserStore((s) => s.fetchUsers);
 
-  const [view, setView] = useState<"users" | "add">("users");
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [search, setSearch] = useState("");
@@ -108,29 +107,6 @@ export default function UsersPage() {
     setCompany("");
   };
 
-  if (view === "add") {
-    return (
-      <main className="space-y-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink">Add user</h1>
-            <p className="mt-1 text-sm text-ink/60">Give someone access to a business on SmartPOS.</p>
-          </div>
-          <button type="button" onClick={() => setView("users")} className={secondaryButton}>
-            <ArrowLeft className="h-4 w-4" />
-            Back to users
-          </button>
-        </header>
-        <AddUserForm
-          onCancel={() => setView("users")}
-          onSuccess={() => {
-            setView("users");
-            reload();
-          }}
-        />
-      </main>
-    );
-  }
 
   return (
     <main className="space-y-6">
@@ -144,10 +120,10 @@ export default function UsersPage() {
           <button type="button" onClick={reload} disabled={loadState === "loading"} className={secondaryButton} aria-label="Refresh">
             <RotateCw className={`h-4 w-4 ${loadState === "loading" ? "animate-spin" : ""}`} />
           </button>
-          <button type="button" onClick={() => setView("add")} className={primaryButton}>
+          <Link href="/admin/tabs/users/new" className={primaryButton}>
             <Plus className="h-4 w-4" />
             Add user
-          </button>
+          </Link>
         </div>
       </header>
 
@@ -230,10 +206,10 @@ export default function UsersPage() {
             title="No users yet"
             text="Add the first business owner so they can sign in and set up their staff."
             action={
-              <button type="button" onClick={() => setView("add")} className={primaryButton}>
+              <Link href="/admin/tabs/users/new" className={primaryButton}>
                 <Plus className="h-4 w-4" />
                 Add user
-              </button>
+              </Link>
             }
           />
         )}

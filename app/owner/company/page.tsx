@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { BedDouble, Bike, Check, ChefHat, Copy, LayoutGrid, Mail, MapPin, Phone, Store, type LucideIcon } from "lucide-react";
+import { BedDouble, Bike, Check, ChefHat, Copy, FileText, FolderOpen, KeyRound, LayoutGrid, Mail, MapPin, Package, PauseCircle, Pencil, Phone, Store, Users, type LucideIcon } from "lucide-react";
 import useAuthStore from "@/stores/auth/authstore";
-import { Avatar, Badge, Card, PageHeader } from "@/app/owner/components/ui";
+import { useOwnerData } from "@/stores/owner/api";
+import type { Category, Employee, Product, Role } from "@/app/owner/types";
+import { Avatar, Badge, Card, PageHeader, StatCard } from "@/app/owner/components/ui";
+import { LinkButton } from "@/app/owner/components/forms";
 
 const EXTRAS: { key: "services" | "delivery" | "floorMap" | "kitchen"; label: string; text: string; icon: LucideIcon }[] = [
   { key: "services", label: "Services & bookings", text: "Rooms, halls, games, tickets and rentals.", icon: BedDouble },
@@ -25,6 +28,10 @@ const INDUSTRIES: Record<string, string> = {
 export default function OwnerCompany() {
   const company = useAuthStore((s) => s.user?.company);
   const [copied, setCopied] = useState(false);
+  const employees = useOwnerData<Employee[]>("/employees");
+  const roles = useOwnerData<Role[]>("/roles");
+  const products = useOwnerData<Product[]>("/products");
+  const categories = useOwnerData<Category[]>("/categories");
 
   if (!company) return null;
 
@@ -47,11 +54,33 @@ export default function OwnerCompany() {
     { label: "Email", value: company.email, icon: Mail },
     { label: "Phone", value: company.phone_number, icon: Phone },
     { label: "Industry", value: INDUSTRIES[company.type] ?? company.type, icon: Store },
+    { label: "TIN", value: company.tin || "—", icon: FileText },
+    { label: "Longest hold for a sale", value: `${company.maxHoldMinutes ?? 60} min`, icon: PauseCircle },
   ];
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Settings" title="Company" description="Your business as SmartPOS knows it." />
+      <PageHeader
+        eyebrow="Settings"
+        title="Company profile"
+        description="Your business details as customers and staff see them."
+        actions={
+          <>
+            <LinkButton tone="outline" icon={KeyRound} href="/owner/settings/password">
+              Change password
+            </LinkButton>
+            <LinkButton icon={Pencil} href="/owner/settings/details">
+              Edit details
+            </LinkButton>
+          </>
+        }
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard tone="dark" label="Employees" value={(employees.data?.length ?? 0).toLocaleString()} icon={Users} hint={`${roles.data?.length ?? 0} roles`} />
+        <StatCard label="Products" value={(products.data?.length ?? 0).toLocaleString()} icon={Package} hint={`${(products.data ?? []).filter((p) => p.active).length} active`} />
+        <StatCard label="Categories" value={(categories.data?.length ?? 0).toLocaleString()} icon={FolderOpen} hint="Product groups" />
+      </div>
 
       <section className="overflow-hidden rounded-2xl border border-ink/10 bg-white">
         <div className="relative h-24 bg-ink">

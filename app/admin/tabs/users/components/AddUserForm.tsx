@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { toast } from "react-hot-toast";
-import { Check, CheckCircle2, Copy, KeyRound, Loader2, Mail, Phone, Search, UserRound, X } from "lucide-react";
+import { Check, CheckCircle2, Copy, KeyRound, Loader2, Mail, Phone, Plus, Search, UserRound } from "lucide-react";
 import useUserStore from "@/stores/users/userStore";
 import useCompaniesStore from "@/stores/companies/companystore";
 import { UserRole, type UserPayload, type createUserResponse } from "@/stores/users/userTypes";
@@ -14,17 +15,19 @@ const field =
 
 const EMPTY: UserPayload = { companyCode: "", name: "", email: "", phone: "", role: UserRole.OWNER };
 
-export default function AddUserForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void }) {
+// Adding a sign-in account, as a page. Opened with ?company=CODE right after a
+// company is registered.
+export default function AddUserForm({ initialCompanyCode = "" }: { initialCompanyCode?: string }) {
   const createUser = useUserStore((s) => s.createUser);
   const companies = useCompaniesStore((s) => s.companies);
   const fetchCompanies = useCompaniesStore((s) => s.fetchCompanies);
 
-  const [form, setForm] = useState<UserPayload>(EMPTY);
+  const [form, setForm] = useState<UserPayload>({ ...EMPTY, companyCode: initialCompanyCode.toUpperCase() });
   const [companyQuery, setCompanyQuery] = useState("");
   const [companiesFailed, setCompaniesFailed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [created, setCreated] = useState<createUserResponse | null>(null);
+  const [created, setCreated] = useState<(createUserResponse & { emailed?: boolean }) | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -77,6 +80,65 @@ export default function AddUserForm({ onSuccess, onCancel }: { onSuccess: () => 
       /* clipboard unavailable */
     }
   };
+
+  if (created)
+    return (
+      <div className="mx-auto max-w-xl overflow-hidden rounded-2xl border border-ink/12 bg-white shadow-xs">
+        <div className="flex items-start gap-4 p-6">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-lime text-ink">
+            <CheckCircle2 className="h-6 w-6" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base font-bold text-ink">{created.name} can now sign in</h2>
+            <p className="mt-1 text-sm leading-relaxed text-ink/60">
+              {created.role === UserRole.EMPLOYEE ? (
+                "Workers sign in with a PIN on the company's devices. The owner can give them a new PIN at any time."
+              ) : created.emailed ? (
+                <>
+                  We emailed the temporary password to <span className="font-semibold text-ink">{created.email}</span>. It&apos;s also below, to hand over in person.
+                </>
+              ) : (
+                <>
+                  Hand this temporary password to them. They sign in with <span className="font-semibold text-ink">{created.email}</span> and choose their own.
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+
+        <dl className="mx-6 divide-y divide-ink/6 rounded-xl bg-ivory px-4 text-sm">
+          <div className="flex justify-between gap-4 py-2.5">
+            <dt className="text-ink/60">Role</dt>
+            <dd className="font-semibold text-ink">{ROLES[created.role]?.label ?? created.role}</dd>
+          </div>
+          <div className="flex justify-between gap-4 py-2.5">
+            <dt className="text-ink/60">Phone</dt>
+            <dd className="font-semibold text-ink">{created.phone}</dd>
+          </div>
+          {created.password && created.role !== UserRole.EMPLOYEE && (
+            <div className="flex items-center justify-between gap-4 py-2.5">
+              <dt className="text-ink/60">Temporary password</dt>
+              <dd className="flex items-center gap-2">
+                <code className="rounded-md bg-white px-2 py-0.5 font-mono text-[13px] font-semibold text-ink ring-1 ring-ink/12">{created.password}</code>
+                <button type="button" onClick={copyPassword} aria-label="Copy password" className="rounded-md p-1 text-ink/45 hover:bg-white hover:text-ink">
+                  {copied ? <Check className="h-4 w-4 text-ink" /> : <Copy className="h-4 w-4" />}
+                </button>
+              </dd>
+            </div>
+          )}
+        </dl>
+        <p className="mx-6 mt-3 text-xs text-ink/50">This password is shown only now. If it&apos;s lost, reset it from their account page.</p>
+
+        <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-ink/6 bg-ivory/70 px-6 py-4">
+          <button type="button" onClick={() => setCreated(null)} className={secondaryButton}>
+            <Plus className="h-4 w-4" /> Add another
+          </button>
+          <Link href={`/admin/tabs/users/${created.id}`} className={primaryButton}>
+            Open their account
+          </Link>
+        </div>
+      </div>
+    );
 
   return (
     <>
@@ -224,11 +286,11 @@ export default function AddUserForm({ onSuccess, onCancel }: { onSuccess: () => 
         </div>
 
         <div className="flex flex-col-reverse gap-2.5 border-t border-ink/6 bg-ivory/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-ink/60">They&apos;ll get an email to set their own password.</p>
+          <p className="text-xs text-ink/60">You get a temporary password to hand over. They choose their own after signing in.</p>
           <div className="flex justify-end gap-2.5">
-            <button type="button" onClick={onCancel} disabled={submitting} className={secondaryButton}>
+            <Link href="/admin/tabs/users" className={secondaryButton}>
               Cancel
-            </button>
+            </Link>
             <button type="submit" disabled={submitting} className={primaryButton}>
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {submitting ? "Adding…" : "Add user"}
@@ -237,77 +299,6 @@ export default function AddUserForm({ onSuccess, onCancel }: { onSuccess: () => 
         </div>
       </form>
 
-      {/* Created */}
-      {created && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm">
-          <div role="dialog" aria-modal="true" aria-labelledby="user-created-title" className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-start gap-4 p-6">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-lime text-ink">
-                <CheckCircle2 className="h-6 w-6" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <h2 id="user-created-title" className="text-base font-bold text-ink">
-                  {created.name} can now sign in
-                </h2>
-                <p className="mt-1 text-sm leading-relaxed text-ink/60">
-                  We sent a link to <span className="font-semibold text-ink">{created.email}</span> to set their password. Ask them to
-                  check their spam folder too.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setCreated(null);
-                  onSuccess();
-                }}
-                aria-label="Close"
-                className="rounded-lg p-1.5 text-ink/45 hover:bg-ink/6 hover:text-ink"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <dl className="mx-6 divide-y divide-ink/6 rounded-xl bg-ivory px-4 text-sm">
-              <div className="flex justify-between gap-4 py-2.5">
-                <dt className="text-ink/60">Role</dt>
-                <dd className="font-semibold text-ink">{ROLES[created.role]?.label ?? created.role}</dd>
-              </div>
-              <div className="flex justify-between gap-4 py-2.5">
-                <dt className="text-ink/60">Phone</dt>
-                <dd className="font-semibold text-ink">{created.phone}</dd>
-              </div>
-              {created.password && (
-                <div className="flex items-center justify-between gap-4 py-2.5">
-                  <dt className="text-ink/60">Temporary password</dt>
-                  <dd className="flex items-center gap-2">
-                    <code className="rounded-md bg-white px-2 py-0.5 font-mono text-[13px] font-semibold text-ink ring-1 ring-ink/12">{created.password}</code>
-                    <button type="button" onClick={copyPassword} aria-label="Copy password" className="rounded-md p-1 text-ink/45 hover:bg-white hover:text-ink">
-                      {copied ? <Check className="h-4 w-4 text-ink" /> : <Copy className="h-4 w-4" />}
-                    </button>
-                  </dd>
-                </div>
-              )}
-              <div className="flex justify-between gap-4 py-2.5">
-                <dt className="text-ink/60">Must change password</dt>
-                <dd className="font-semibold text-ink">{created.mustChangePassword ? "Yes, on first sign-in" : "No"}</dd>
-              </div>
-            </dl>
-
-            <div className="mt-6 flex justify-end border-t border-ink/6 bg-ivory/70 px-6 py-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setCreated(null);
-                  onSuccess();
-                }}
-                className={primaryButton}
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

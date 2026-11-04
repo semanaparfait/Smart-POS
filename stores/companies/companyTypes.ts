@@ -9,6 +9,11 @@ export interface CompanyType {
   phone_number: number;
   location: string;
   type: string;
+  // false = terminated by the super admin.
+  active?: boolean;
+  // SmartPOS subscription; missing on older servers.
+  plan?: string | null;
+  paidUntil?: string | null;
 }
 
 export enum CompanyKind {
@@ -46,4 +51,8 @@ export interface CompanyTypeResponse {
   phone_number: string;
   location: string;
   type: CompanyKind;
+  // Off when the super admin terminated it; missing on older servers (= active).
+  active?: boolean;
+  suspendedAt?: string | null;
+  suspendedReason?: string | null;
 }

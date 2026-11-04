@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import useCompaniesStore from "@/stores/companies/companystore";
 import { CompanyKind, type CompanyType } from "@/stores/companies/companyTypes";
 import {
-  ArrowLeft,
   Building2,
   CalendarPlus,
   LayoutGrid,
@@ -17,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import FetchCompany, { CompanySkeleton, industryOf } from "@/app/admin/tabs/companies/components/FetchCompany";
-import AddCompany from "@/app/admin/tabs/companies/components/AddCompany";
+import Link from "next/link";
 
 type SortKey = "newest" | "oldest" | "name";
 type LoadState = "loading" | "ready" | "error";
@@ -25,7 +24,6 @@ type LoadState = "loading" | "ready" | "error";
 const time = (c: CompanyType) => new Date(c.createdAt).getTime() || 0;
 
 export default function CompaniesPage() {
-  const [activeView, setActiveView] = useState<"companies" | "add">("companies");
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [search, setSearch] = useState("");
   const [industry, setIndustry] = useState("");
@@ -105,33 +103,6 @@ export default function CompaniesPage() {
     setIndustry("");
   };
 
-  if (activeView === "add") {
-    return (
-      <main className="space-y-6">
-        <header className="flex flex-col gap-4 border-b border-ink/12 pb-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink">Register company</h1>
-            <p className="mt-1 text-sm text-ink/60">Add a new business to the SmartPOS platform.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setActiveView("companies")}
-            className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-ink/80 ring-1 ring-inset ring-ink/12 transition-colors hover:bg-ivory hover:text-ink"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to companies
-          </button>
-        </header>
-        <AddCompany
-          onSuccess={() => {
-            setActiveView("companies");
-            load();
-          }}
-          onCancel={() => setActiveView("companies")}
-        />
-      </main>
-    );
-  }
 
   return (
     <main className="space-y-6">
@@ -141,14 +112,13 @@ export default function CompaniesPage() {
           <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink">Companies</h1>
           <p className="mt-1 text-sm text-ink/60">All businesses registered on SmartPOS.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setActiveView("add")}
+        <Link
+          href="/admin/tabs/companies/new"
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-lime px-4 py-2.5 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-lime-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2"
         >
           <Plus className="h-4 w-4" />
           Add company
-        </button>
+        </Link>
       </header>
 
       {/* Summary */}
@@ -295,14 +265,13 @@ export default function CompaniesPage() {
             title="No companies yet"
             text="Register the first business to start managing it on SmartPOS."
             action={
-              <button
-                type="button"
-                onClick={() => setActiveView("add")}
+              <Link
+                href="/admin/tabs/companies/new"
                 className="inline-flex items-center gap-2 rounded-lg bg-lime px-4 py-2 text-sm font-semibold text-ink hover:bg-lime-dark"
               >
                 <Plus className="h-4 w-4" />
                 Add company
-              </button>
+              </Link>
             }
           />
         )}

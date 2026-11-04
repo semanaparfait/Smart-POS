@@ -17,17 +17,15 @@ import {
   Hash,
   Mail,
   MapPin,
-  MonitorSmartphone,
   Pencil,
   Phone,
-  Receipt,
   RotateCw,
-  Store,
-  Users,
 } from "lucide-react";
 import { industryOf } from "@/app/admin/tabs/companies/components/FetchCompany";
-import EditCompany from "@/app/admin/tabs/companies/components/EditCompany";
 import CompanyFeatures from "@/app/admin/tabs/companies/components/CompanyFeatures";
+import CompanyMonitor from "@/app/admin/tabs/companies/components/CompanyMonitor";
+import CompanyBilling from "@/app/admin/tabs/companies/components/CompanyBilling";
+import CompanyStatus from "@/app/admin/tabs/companies/components/CompanyStatus";
 
 const formatDate = (value?: string, withTime = false) => {
   const date = value ? new Date(value) : null;
@@ -77,7 +75,6 @@ export default function CompanyDetailPage() {
   const [company, setCompany] = useState<CompanyTypeResponse | null>(null);
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [errorText, setErrorText] = useState("");
-  const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState("");
   const [attempt, setAttempt] = useState(0);
 
@@ -188,13 +185,6 @@ export default function CompanyDetailPage() {
     { key: "industry", label: "Industry", value: industry.label, icon: IndustryIcon },
   ];
 
-  const modules = [
-    { label: "Branches", icon: Store },
-    { label: "POS devices", icon: MonitorSmartphone },
-    { label: "Staff", icon: Users },
-    { label: "Sales", icon: Receipt },
-  ];
-
   return (
     <div className="space-y-6 pb-10">
       {backLink}
@@ -228,7 +218,14 @@ export default function CompanyDetailPage() {
             )}
 
             <div className="min-w-0 pb-0.5">
-              <h1 className="truncate text-2xl font-bold tracking-[-0.02em] text-ink">{company.name}</h1>
+              <h1 className="flex items-center gap-2 truncate text-2xl font-bold tracking-[-0.02em] text-ink">
+                {company.name}
+                {company.active === false ? (
+                  <span className="rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700 ring-1 ring-inset ring-rose-200">Terminated</span>
+                ) : (
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">Active</span>
+                )}
+              </h1>
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink/60">
                 {company.code && (
                   <button
@@ -275,17 +272,18 @@ export default function CompanyDetailPage() {
                 Call
               </a>
             )}
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
+            <Link
+              href={`/admin/tabs/companies/${company.id}/edit`}
               className="inline-flex items-center gap-2 rounded-lg bg-lime px-4 py-2 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-lime-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2"
             >
               <Pencil className="h-4 w-4" />
               Edit company
-            </button>
+            </Link>
           </div>
         </div>
       </section>
+
+      <CompanyMonitor companyId={company.id} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
@@ -293,13 +291,9 @@ export default function CompanyDetailPage() {
           <section className="rounded-2xl border border-ink/12 bg-white shadow-xs">
             <header className="flex items-center justify-between border-b border-ink/6 px-6 py-4">
               <h2 className="text-sm font-bold text-ink">Business profile</h2>
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                className="text-xs font-semibold text-ink/60 transition-colors hover:text-ink"
-              >
+              <Link href={`/admin/tabs/companies/${company.id}/edit`} className="text-xs font-semibold text-ink/60 transition-colors hover:text-ink">
                 Edit
-              </button>
+              </Link>
             </header>
             <dl className="grid grid-cols-1 sm:grid-cols-2">
               {profile.map(({ key, label, value, icon: Icon, href, copy: canCopy }, i) => (
@@ -342,27 +336,18 @@ export default function CompanyDetailPage() {
           </section>
 
           <CompanyFeatures key={company.id} companyId={company.id} initial={company.features} />
-
-          {/* Operations — not provided by the API yet */}
-          <section className="rounded-2xl border border-ink/12 bg-white shadow-xs">
-            <header className="border-b border-ink/6 px-6 py-4">
-              <h2 className="text-sm font-bold text-ink">Operations</h2>
-              <p className="mt-0.5 text-xs text-ink/60">Live figures will appear here once they are connected.</p>
-            </header>
-            <ul className="grid grid-cols-2 gap-3 p-6 md:grid-cols-4">
-              {modules.map(({ label, icon: Icon }) => (
-                <li key={label} className="rounded-xl border border-dashed border-ink/12 bg-ivory/60 p-4">
-                  <Icon className="h-5 w-5 text-ink/45" />
-                  <p className="mt-3 text-sm font-semibold text-ink/80">{label}</p>
-                  <p className="mt-0.5 text-[11px] font-medium text-ink/45">Not connected yet</p>
-                </li>
-              ))}
-            </ul>
-          </section>
         </div>
 
         {/* Record */}
         <aside className="space-y-6">
+          <CompanyBilling companyId={company.id} />
+          <CompanyStatus
+            key={company.id}
+            companyId={company.id}
+            name={company.name}
+            initial={{ active: company.active, suspendedAt: company.suspendedAt, suspendedReason: company.suspendedReason }}
+            onChanged={(s) => setCompany((c) => (c ? { ...c, ...s } : c))}
+          />
           <section className="rounded-2xl border border-ink/12 bg-white shadow-xs">
             <header className="border-b border-ink/6 px-6 py-4">
               <h2 className="text-sm font-bold text-ink">Record</h2>
@@ -428,16 +413,6 @@ export default function CompanyDetailPage() {
         </aside>
       </div>
 
-      {editing && (
-        <EditCompany
-          company={company}
-          onClose={() => setEditing(false)}
-          onSaved={(updated) => {
-            setCompany(updated);
-            setEditing(false);
-          }}
-        />
-      )}
     </div>
   );
 }

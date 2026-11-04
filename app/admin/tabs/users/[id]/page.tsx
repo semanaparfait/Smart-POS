@@ -19,12 +19,15 @@ import {
   LogIn,
   Mail,
   MapPin,
+  Pencil,
   Phone,
+  Power,
   RotateCw,
   Trash2,
   type LucideIcon,
 } from "lucide-react";
 import useUserStore from "@/stores/users/userStore";
+import { ownerRequest } from "@/stores/owner/api";
 import type { UserResponse } from "@/stores/users/userTypes";
 import { RolePill, StatusDot, roleOf } from "@/app/admin/tabs/users/components/FetchUsers";
 import { industryOf } from "@/app/admin/tabs/companies/components/FetchCompany";
@@ -51,8 +54,10 @@ export default function UserDetailPage() {
   const [errorText, setErrorText] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [copied, setCopied] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [busy, setBusy] = useState<"active" | "password" | null>(null);
+  // A password just given out, shown once.
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -77,13 +82,6 @@ export default function UserDetailPage() {
       alive = false;
     };
   }, [id, fetchUserById, attempt]);
-
-  useEffect(() => {
-    if (!confirmDelete) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !deleting && setConfirmDelete(false);
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [confirmDelete, deleting]);
 
   const retry = () => {
     setLoadState("loading");
@@ -110,6 +108,35 @@ export default function UserDetailPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not delete the user");
       setDeleting(false);
+    }
+  };
+
+  const setActive = async (active: boolean) => {
+    if (!user) return;
+    setBusy("active");
+    try {
+      await ownerRequest(`/user/${user.id}`, { method: "PATCH", body: JSON.stringify({ active }) });
+      setUser({ ...user, active });
+      toast.success(active ? `${user.name} can sign in again` : `${user.name} is turned off and signed out`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const resetPassword = async () => {
+    if (!user) return;
+    setBusy("password");
+    try {
+      const res = await ownerRequest<{ password: string }>(`/user/${user.id}/reset-password`, { method: "PATCH" });
+      setNewPassword(res.password);
+      setUser({ ...user, mustChangePassword: true });
+      toast.success("New password ready. Hand it to them.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not reset the password");
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -224,6 +251,10 @@ export default function UserDetailPage() {
                 Call
               </a>
             )}
+            <Link href={`/admin/tabs/users/${user.id}/edit`} className={primaryButton}>
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Link>
           </div>
         </div>
       </section>
@@ -377,57 +408,76 @@ export default function UserDetailPage() {
             </div>
           </section>
 
-          {/* Danger zone */}
-          <section className="rounded-2xl border border-rose-200/80 bg-white p-6 shadow-xs">
-            <h2 className="text-sm font-bold text-ink">Delete user</h2>
-            <p className="mt-1 text-xs leading-relaxed text-ink/60">
-              Permanently remove this person&apos;s SmartPOS account. They won&apos;t be able to sign in again.
-            </p>
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold text-rose-600 ring-1 ring-inset ring-rose-200 transition-colors hover:bg-rose-50"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete user
-            </button>
+          {/* Access */}
+          <section className="rounded-2xl border border-ink/12 bg-white shadow-xs">
+            <header className="border-b border-ink/6 px-6 py-4">
+              <h2 className="text-sm font-bold text-ink">Access</h2>
+            </header>
+            <div className="space-y-5 p-6">
+              <div>
+                <p className="text-sm font-semibold text-ink">{user.active ? "Can sign in" : "Turned off"}</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-ink/60">
+                  {user.active ? "Turning the account off signs them out everywhere at once. Nothing is deleted." : "They can't sign in until you turn the account on again."}
+                </p>
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => setActive(!user.active)}
+                  className={`mt-3 inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors disabled:opacity-60 ${
+                    user.active ? "text-rose-600 ring-1 ring-inset ring-rose-200 hover:bg-rose-50" : "bg-ink text-white hover:bg-ink-soft"
+                  }`}
+                >
+                  {busy === "active" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
+                  {user.active ? "Turn off" : "Turn on"}
+                </button>
+              </div>
+
+              {user.role !== "EMPLOYEE" && (
+                <div className="border-t border-ink/6 pt-5">
+                  <p className="text-sm font-semibold text-ink">Password</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-ink/60">Gives them a new password to sign in with. They choose their own right after, and are signed out everywhere.</p>
+                  {newPassword ? (
+                    <div className="mt-3 rounded-xl bg-ivory p-3">
+                      <p className="text-[11px] font-medium text-ink/55">New password, shown only now</p>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <code className="font-mono text-base font-semibold tracking-wide text-ink">{newPassword}</code>
+                        <button type="button" onClick={() => copy("password", newPassword)} aria-label="Copy password" className="rounded-md p-1.5 text-ink/50 hover:bg-white hover:text-ink">
+                          {copied === "password" ? <Check className="h-4 w-4 text-ink" /> : <Copy className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={busy !== null}
+                      onClick={resetPassword}
+                      className={`${secondaryButton} mt-3`}
+                    >
+                      {busy === "password" ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                      Reset password
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <div className="border-t border-ink/6 pt-5">
+                <p className="text-sm font-semibold text-ink">Delete account</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-ink/60">Removes the account for good. To stop someone for a while, turn it off instead.</p>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={handleDelete}
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold text-rose-600 ring-1 ring-inset ring-rose-200 transition-colors hover:bg-rose-50 disabled:opacity-60"
+                >
+                  {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  Delete account
+                </button>
+              </div>
+            </div>
           </section>
         </aside>
       </div>
 
-      {confirmDelete && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
-          onPointerDown={(e) => e.target === e.currentTarget && !deleting && setConfirmDelete(false)}
-        >
-          <div role="alertdialog" aria-modal="true" aria-labelledby="delete-user-title" className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-start gap-4 p-6">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
-                <Trash2 className="h-5 w-5" />
-              </span>
-              <div>
-                <h2 id="delete-user-title" className="text-base font-bold text-ink">Delete {user.name || "this user"}?</h2>
-                <p className="mt-1 text-sm leading-relaxed text-ink/60">They will no longer be able to sign in. This cannot be undone.</p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2.5 border-t border-ink/6 bg-ivory/70 px-6 py-4">
-              <button type="button" disabled={deleting} onClick={() => setConfirmDelete(false)} className={secondaryButton}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={deleting}
-                onClick={handleDelete}
-                autoFocus
-                className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-rose-700 disabled:opacity-70"
-              >
-                {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {deleting ? "Deleting…" : "Delete user"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   Wine,
 } from "lucide-react";
 import type { CompanyType } from "@/stores/companies/companyTypes";
+import { BILLING_META, billingOf } from "@/app/admin/components/Platform";
 
 export const INDUSTRIES: Record<string, { label: string; icon: React.ElementType }> = {
   RESTAURANT: { label: "Restaurant", icon: Utensils },
@@ -77,6 +78,18 @@ function IndustryPill({ type }: { type?: string }) {
 
 const detailsHref = (company: CompanyType) => `/admin/tabs/companies/${company.id}`;
 
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+// Only worth a mark when money is due.
+function BillingPill({ company }: { company: CompanyType }) {
+  const status = billingOf(company.plan, company.paidUntil, today());
+  if (status !== "OVERDUE" && status !== "DUE_SOON") return null;
+  return <span className={`mt-1 mr-1.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${BILLING_META[status].cls}`}>Subscription {BILLING_META[status].label.toLowerCase()}</span>;
+}
+
 /** Card grid */
 function CompanyGrid({ companies }: { companies: CompanyType[] }) {
   return (
@@ -91,6 +104,8 @@ function CompanyGrid({ companies }: { companies: CompanyType[] }) {
               <CompanyAvatar company={company} />
               <div className="min-w-0 flex-1">
                 <h3 className="truncate text-[15px] font-bold tracking-[-0.01em] text-ink">{company.name}</h3>
+                {company.active === false && <span className="mt-1 mr-1.5 inline-block rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700">Terminated</span>}
+                <BillingPill company={company} />
                 {company.code && (
                   <p className="mt-1 inline-block rounded-md bg-ivory px-1.5 py-0.5 font-mono text-[11px] text-ink/60 ring-1 ring-inset ring-ink/12">
                     {company.code}
@@ -156,7 +171,13 @@ function CompanyTable({ companies }: { companies: CompanyType[] }) {
                   <Link href={detailsHref(company)} className="flex items-center gap-3 focus-visible:outline-none">
                     <CompanyAvatar company={company} size="h-9 w-9 text-xs" />
                     <span className="min-w-0">
-                      <span className="block truncate font-semibold text-ink group-hover:underline">{company.name}</span>
+                      <span className="block truncate font-semibold text-ink group-hover:underline">
+                        {company.name}
+                        {company.active === false && <span className="ml-2 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700">Terminated</span>}
+                        <span className="ml-2">
+                          <BillingPill company={company} />
+                        </span>
+                      </span>
                       {company.code && <span className="block font-mono text-[11px] text-ink/45">{company.code}</span>}
                     </span>
                   </Link>

@@ -41,7 +41,11 @@ export default function LoginPage() {
     try {
       const loggedUser = await login({ deviceId, email, password });
       toast.success("Login successful!");
-      router.push(homeForRole(loggedUser.role));
+      const home = homeForRole(loggedUser.role);
+      // A temporary password (new account, or reset by SmartPOS) is changed first.
+      if (loggedUser.mustChangePassword && home !== "/pages/Login")
+        router.push(home === "/admin" ? "/admin/tabs/profile/password" : "/owner/settings/password");
+      else router.push(home);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login failed";
       // Right password, but this browser isn't an approved device of the company.
@@ -171,7 +175,7 @@ export default function LoginPage() {
                     Password
                   </label>
                   <Link
-                    href="#forgot-password"
+                    href={`/pages/forgot-password${email ? `?email=${encodeURIComponent(email)}` : ""}`}
                     className="text-xs font-bold text-ink underline decoration-lime decoration-2 underline-offset-4 transition hover:decoration-ink"
                   >
                     Forgot password?

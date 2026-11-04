@@ -20,7 +20,9 @@ export interface superadminType
   role: string,
   active: true,
   mustChangePassword: true,
-  lastLoginAt: string
+  lastLoginAt: string,
+  language?: string,
+  picture?: { url: string; thumbnailUrl?: string } | null,
 }
 
 export interface SignedInCompany {
@@ -32,6 +34,21 @@ export interface SignedInCompany {
   phone_number: string;
   location: string;
   type: string;
+  tin?: string | null;
+  // How long a held cart is kept, in minutes.
+  maxHoldMinutes?: number;
+  // The owner's own delivery settings (Settings, Delivery).
+  deliveryEnabled?: boolean;
+  deliveryFee?: number | string;
+  deliveryAreas?: DeliveryArea[];
+  deliveryRiders?: boolean;
+  // The owner's own kitchen setting (Settings, Kitchen).
+  kitchenEnabled?: boolean;
   // Extras SmartPOS turned on for the company.
   features?: { services?: boolean; delivery?: boolean; floorMap?: boolean; kitchen?: boolean } | null;
+}
+
+export interface DeliveryArea {
+  name: string;
+  fee: number;
 }

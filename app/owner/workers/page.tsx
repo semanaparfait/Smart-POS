@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import toast from "react-hot-toast";
-import { KeyRound, Mail, Pencil, Phone, Plus, Power, ShieldCheck, Trash2, UserCheck, UserPlus, Users, Wallet } from "lucide-react";
+import { BarChart3, Eye, KeyRound, Mail, Pencil, Phone, Plus, Power, ShieldCheck, Trash2, UserCheck, UserPlus, Users, Wallet } from "lucide-react";
 import { ownerRequest, useOwnerData } from "@/stores/owner/api";
 import { Button, LinkButton } from "@/app/owner/components/forms";
 import { CredentialsDialog, WORKERS, type Credentials } from "@/app/owner/workers/WorkerForms";
@@ -76,7 +77,9 @@ function WorkerCard({
       <div className="flex items-start gap-4">
         <Avatar name={worker.name} src={worker.profile?.thumbnailUrl ?? worker.profile?.url} size={48} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-bold text-ink">{worker.name}</p>
+          <Link href={`${WORKERS}/${worker.id}`} className="block truncate text-[15px] font-bold text-ink hover:underline">
+            {worker.name}
+          </Link>
           <div className="mt-1 flex flex-wrap gap-1.5">
             <Badge tone="ink">{worker.role?.name ?? "No role"}</Badge>
             {!active && <Badge tone="danger">Deactivated</Badge>}
@@ -115,7 +118,10 @@ function WorkerCard({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-1.5 border-t border-ink/6 pt-3">
-        <LinkButton small tone="outline" icon={Pencil} href={`${WORKERS}/${worker.id}`}>
+        <LinkButton small tone="outline" icon={Eye} href={`${WORKERS}/${worker.id}`}>
+          View
+        </LinkButton>
+        <LinkButton small tone="quiet" icon={Pencil} href={`${WORKERS}/${worker.id}/edit`}>
           Edit
         </LinkButton>
         {worker.user && (
@@ -145,6 +151,7 @@ export default function OwnerWorkers() {
   const workers = useOwnerData<Employee[]>("/employees");
   const roles = useOwnerData<Role[]>("/roles");
   const [filter, setFilter] = useState<Filter>("all");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [credentials, setCredentials] = useState<Credentials | null>(null);
   const [removingRole, setRemovingRole] = useState<string | null>(null);
@@ -169,11 +176,14 @@ export default function OwnerWorkers() {
   const visible = all.filter(
     (w) =>
       (filter === "all" || (filter === "active" ? isActive(w) : !isActive(w))) &&
+      (roleFilter === "all" || w.role?.id === roleFilter) &&
       (!query || [w.name, w.email, w.phone, w.role?.name].some((v) => v?.toLowerCase().includes(query))),
   );
 
   const monthly = all.filter((w) => isActive(w) && w.payType !== "PER_DELIVERY").reduce((sum, w) => sum + toNumber(w.salary), 0);
   const perRole = (roleId: string) => all.filter((w) => w.role?.id === roleId).length;
+  const payroll = all.reduce((sum, w) => sum + toNumber(w.salary), 0);
+  const emptyRoles = (roles.data ?? []).filter((r) => perRole(r.id) === 0).length;
 
   return (
     <div className="space-y-6">
@@ -200,10 +210,11 @@ export default function OwnerWorkers() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard tone="dark" label="Workers" value={all.length.toLocaleString()} icon={Users} hint={`${all.filter(isActive).length} active`} />
-          <StatCard label="Monthly salaries" value={rwf(monthly)} icon={Wallet} hint="Active workers on a monthly salary" />
-          <StatCard label="Roles" value={(roles.data ?? []).length.toLocaleString()} icon={ShieldCheck} hint="Each gives its own access" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard tone="dark" label="Employees" value={all.length.toLocaleString()} icon={Users} hint={`${all.filter(isActive).length} active`} />
+          <StatCard label="Roles" value={(roles.data ?? []).length.toLocaleString()} icon={ShieldCheck} hint={emptyRoles ? `${emptyRoles} with nobody assigned` : "All roles filled"} />
+          <StatCard label="Monthly payroll" value={rwf(monthly)} icon={Wallet} hint="Active workers on a monthly salary" />
+          <StatCard label="Average salary" value={rwf(all.length ? Math.round(payroll / all.length) : 0)} icon={BarChart3} hint="Per employee" />
         </div>
       )}
 
@@ -221,6 +232,24 @@ export default function OwnerWorkers() {
             />
             <SearchInput value={search} onChange={setSearch} placeholder="Name, phone, email or role" />
           </div>
+          {(roles.data ?? []).length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {[{ id: "all", name: "All roles" }, ...(roles.data ?? [])].map((r) => {
+                const on = roleFilter === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => setRoleFilter(r.id)}
+                    aria-pressed={on}
+                    className={`h-8 rounded-full px-3.5 text-xs font-semibold transition-colors ${on ? "bg-ink text-lime" : "bg-white text-ink/65 ring-1 ring-inset ring-ink/12 hover:bg-ivory"}`}
+                  >
+                    {r.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {workers.loading ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

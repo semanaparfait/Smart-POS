@@ -174,7 +174,17 @@ export interface Employee {
   shift: string;
   role?: Role | null;
   profile?: { url?: string; thumbnailUrl?: string } | null;
-  user?: { id: string; active: boolean; lastLoginAt?: string | null } | null;
+  user?: { id: string; active: boolean; lastLoginAt?: string | null; allowMultipleDevices?: boolean } | null;
+  createdAt?: string;
+  updatedAt?: string;
+  // Access for this worker only, on top of the role.
+  extraPermissions?: string[] | null;
+  removedPermissions?: string[] | null;
+  // The final access the server worked out; null = everything.
+  permissions?: string[] | null;
+  // The most they may give on credit in one sale.
+  creditLimit?: string | number | null;
+  company?: { name?: string; code?: string; type?: string; location?: string; email?: string; phone_number?: string } | null;
 }
 
 export type DeviceKind = "POS_TERMINAL" | "KITCHEN_DISPLAY" | "CUSTOMER_DISPLAY" | "RIDER_PHONE";
@@ -189,5 +199,24 @@ export interface Device {
   online: boolean;
   lastSeenAt: string | null;
   createdAt: string;
-  currentUser: { name: string } | null;
+  updatedAt?: string;
+  currentUser: { name: string; email?: string; phone?: string; role?: string; active?: boolean; lastLoginAt?: string | null } | null;
+  // Customer displays only: the till whose sale they show.
+  displayFor?: { id: string; deviceName: string } | null;
+  // MoMo Pay code customers pay to at this device.
+  momoCode?: string | null;
+  lastLoginAt?: string | null;
+  lastActivity?: string | null;
+  lastActivityAt?: string | null;
+  company?: { name?: string; code?: string; type?: string; location?: string; phone_number?: string } | null;
+}
+
+export interface DeviceActivity {
+  id: string;
+  createdAt: string;
+  user: { name: string } | null;
+  action: string;
+  method: string | null;
+  path: string | null;
+  statusCode: number | null;
 }

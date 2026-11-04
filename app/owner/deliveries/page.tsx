@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Bike, CircleDollarSign, Download, MapPin, Phone, Route, Truck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { ArrowRight, Bike, CircleDollarSign, Download, MapPin, Phone, Route, Truck } from "lucide-react";
 import useAuthStore from "@/stores/auth/authstore";
 import { useOwnerData } from "@/stores/owner/api";
 import type { Order } from "@/app/owner/types";
@@ -10,7 +11,7 @@ import { Button } from "@/app/owner/components/forms";
 import FeatureOff from "@/app/owner/components/FeatureOff";
 import { PAYMENT_LABELS, isPaid } from "@/app/owner/sales";
 
-type Period = "today" | "week" | "month" | "all";
+type Period = "today" | "yesterday" | "week" | "month" | "all";
 type DeliveryStatus = "WAITING" | "ON_THE_WAY" | "DELIVERED" | "NOT_DELIVERED";
 
 const STATUS: Record<DeliveryStatus, { label: string; tone: "lime" | "muted" | "ink" | "danger"; bar: string }> = {
@@ -23,11 +24,15 @@ const STATUS: Record<DeliveryStatus, { label: string; tone: "lime" | "muted" | "
 const statusOf = (o: Order): DeliveryStatus => (o.deliveryStatus as DeliveryStatus) ?? "WAITING";
 const riderOf = (o: Order) => (o.rider ? personName(o.rider) : o.outsideRider ?? null);
 
-const periodStart = (period: Period) => {
+// [start, end) of a period; null = no limit.
+const periodRange = (period: Period): [Date, Date] | null => {
   const now = new Date();
-  if (period === "today") return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (period === "week") return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
-  if (period === "month") return new Date(now.getFullYear(), now.getMonth(), 1);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  if (period === "today") return [today, tomorrow];
+  if (period === "yesterday") return [new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1), today];
+  if (period === "week") return [new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6), tomorrow];
+  if (period === "month") return [new Date(now.getFullYear(), now.getMonth(), 1), tomorrow];
   return null;
 };
 
@@ -40,7 +45,7 @@ const paymentText = (o: Order) => {
 
 function downloadCsv(orders: Order[]) {
   const rows = [
-    ["Placed", "Customer", "Phone", "Address", "Area", "Items", "Fee", "Total", "Payment", "Status", "Placed by", "Taken by", "Delivered", "Problem"],
+    ["Placed", "Customer", "Phone", "Address", "Area", "Items", "Fee", "Total", "Payment", "Status", "Placed by", "Taken by", "Money with", "On the way", "Delivered", "Problem", "Note"],
     ...orders.map((o) => [
       new Date(o.createdAt).toLocaleString("en-GB"),
       o.customerName ?? "",
@@ -54,8 +59,11 @@ function downloadCsv(orders: Order[]) {
       STATUS[statusOf(o)].label,
       personName(o.user),
       riderOf(o) ?? "",
+      o.collectedBy ? personName(o.collectedBy) : "",
+      o.sentAt ? new Date(o.sentAt).toLocaleString("en-GB") : "",
       o.deliveredAt ? new Date(o.deliveredAt).toLocaleString("en-GB") : "",
       o.deliveryProblem ?? "",
+      o.note ?? "",
     ]),
   ];
   const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -70,6 +78,9 @@ function DeliveryCard({ order }: { order: Order }) {
   const status = STATUS[statusOf(order)];
   const steps = [
     { label: "Placed", at: order.createdAt, by: personName(order.user) },
+    isPaid(order)
+      ? { label: order.payOnDelivery ? "Paid at the door" : "Paid", at: order.payments?.[0]?.createdAt ?? null, by: order.collectedBy ? personName(order.collectedBy) : personName(order.user) }
+      : null,
     order.sentAt ? { label: "On the way", at: order.sentAt, by: riderOf(order) } : null,
     order.deliveredAt ? { label: "Delivered", at: order.deliveredAt, by: riderOf(order) } : null,
     statusOf(order) === "NOT_DELIVERED" ? { label: "Not delivered", at: order.updatedAt ?? null, by: order.deliveryProblem ?? null } : null,
@@ -131,6 +142,22 @@ function DeliveryCard({ order }: { order: Order }) {
               <dd className="text-ink">{personName(order.collectedBy)}</dd>
             </div>
           )}
+          <div className="flex gap-2">
+            <dt className="w-24 shrink-0 text-ink/50">Placed by</dt>
+            <dd className="text-ink">{personName(order.user)}</dd>
+          </div>
+          {order.note && (
+            <div className="flex gap-2">
+              <dt className="w-24 shrink-0 text-ink/50">Note</dt>
+              <dd className="text-ink">{order.note}</dd>
+            </div>
+          )}
+          {order.deliveryProblem && (
+            <div className="flex gap-2">
+              <dt className="w-24 shrink-0 text-ink/50">Problem</dt>
+              <dd className="text-rose-600">{order.deliveryProblem}</dd>
+            </div>
+          )}
         </dl>
 
         <ol className="space-y-1.5 border-t border-ink/6 pt-3">
@@ -142,6 +169,9 @@ function DeliveryCard({ order }: { order: Order }) {
             </li>
           ))}
         </ol>
+        <Link href={`/owner/orders/${order.id}`} className="inline-flex items-center gap-1 text-xs font-bold text-ink hover:underline">
+          Open full order <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
     </div>
   );
@@ -155,10 +185,17 @@ export default function OwnerDeliveries() {
   const [status, setStatus] = useState<"all" | DeliveryStatus>("all");
   const [search, setSearch] = useState("");
 
+  // Keeps up with deliveries moving along.
+  useEffect(() => {
+    if (!on) return;
+    const timer = setInterval(reload, 60_000);
+    return () => clearInterval(timer);
+  }, [on, reload]);
+
   const inPeriod = useMemo(() => {
-    const from = periodStart(period);
+    const range = periodRange(period);
     return (data ?? [])
-      .filter((o) => o.type === "DELIVERY" && (!from || new Date(o.createdAt) >= from))
+      .filter((o) => o.type === "DELIVERY" && (!range || (new Date(o.createdAt) >= range[0] && new Date(o.createdAt) < range[1])))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }, [data, period]);
 
@@ -212,6 +249,7 @@ export default function OwnerDeliveries() {
           <Tabs
             options={[
               { value: "today", label: "Today" },
+              { value: "yesterday", label: "Yesterday" },
               { value: "week", label: "Last 7 days" },
               { value: "month", label: "This month" },
               { value: "all", label: "All" },

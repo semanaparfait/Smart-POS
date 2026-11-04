@@ -6,11 +6,10 @@ import toast from "react-hot-toast";
 import { Check, Copy, KeyRound, ShieldCheck, UserPlus } from "lucide-react";
 import { ownerRequest } from "@/stores/owner/api";
 import type { Employee, Role } from "@/app/owner/types";
-import { Badge, toNumber } from "@/app/owner/components/ui";
+import { toNumber } from "@/app/owner/components/ui";
 import { BackButton, Button, Choices, Field, FormPage, FormSection, MoneyInput, PhotoPicker, Select, TextInput } from "@/app/owner/components/forms";
-import { PERMISSION_GROUPS, ROLE_PRESETS, permissionLabel, withRequirements, withoutDependents } from "@/app/owner/permissions";
-
-const ALL_KEYS = PERMISSION_GROUPS.flatMap((g) => g.permissions.map((p) => p.key));
+import { ROLE_PRESETS, withRequirements } from "@/app/owner/permissions";
+import { ALL_KEYS, PermissionList } from "@/app/owner/workers/PermissionList";
 
 type Shift = "DAY" | "EVENING" | "NIGHT" | "HYBRID";
 type PayType = "MONTHLY" | "PER_DELIVERY";
@@ -81,13 +80,13 @@ export function CredentialsCard({ credentials, onDone }: { credentials: Credenti
 
 // The page for adding or changing a worker. Paid per delivery shows only for
 // riders. A new worker's PIN and password show on the page after saving.
-export function WorkerForm({ worker, roles }: { worker: Employee | null; roles: Role[] }) {
+export function WorkerForm({ worker, roles, startRoleId }: { worker: Employee | null; roles: Role[]; startRoleId?: string }) {
   const router = useRouter();
   const [created, setCreated] = useState<Credentials | null>(null);
   const [name, setName] = useState(worker?.name ?? "");
   const [email, setEmail] = useState(worker?.email ?? "");
   const [phone, setPhone] = useState(worker?.phone ?? "");
-  const [roleId, setRoleId] = useState(worker?.role?.id ?? roles[0]?.id ?? "");
+  const [roleId, setRoleId] = useState(worker?.role?.id ?? (roles.some((r) => r.id === startRoleId) ? startRoleId! : (roles[0]?.id ?? "")));
   const [shift, setShift] = useState<Shift>((worker?.shift as Shift) ?? "DAY");
   const [payType, setPayType] = useState<PayType>(worker?.payType ?? "MONTHLY");
   const [salary, setSalary] = useState(worker?.salary ? String(worker.salary) : "");
@@ -115,7 +114,7 @@ export function WorkerForm({ worker, roles }: { worker: Employee | null; roles: 
           body: JSON.stringify({ name: name.trim(), email: email.trim(), phone: phone.trim(), roleId, shift, ...pay }),
         });
         toast.success(`${name.trim()} saved`);
-        router.push(WORKERS);
+        router.push(`${WORKERS}/${worker.id}`);
       } else {
         const form = new FormData();
         form.append("name", name.trim());
@@ -148,14 +147,14 @@ export function WorkerForm({ worker, roles }: { worker: Employee | null; roles: 
 
   return (
     <FormPage
-      back={WORKERS}
-      backLabel="Workers"
+      back={worker ? `${WORKERS}/${worker.id}` : WORKERS}
+      backLabel={worker ? worker.name : "Workers"}
       eyebrow="Team"
       title={worker ? `Edit ${worker.name}` : "Add a worker"}
       description={worker ? "Change their details, role or pay." : "They sign in on a till with the PIN shown after saving."}
       actions={
         <>
-          <BackButton href={WORKERS} />
+          <BackButton href={worker ? `${WORKERS}/${worker.id}` : WORKERS} />
           <Button onClick={save} busy={saving} icon={worker ? Check : UserPlus}>
             {worker ? "Save" : "Add worker"}
           </Button>
@@ -223,7 +222,6 @@ export function RoleForm({ role }: { role: Role | null }) {
   );
   const [saving, setSaving] = useState(false);
 
-  const toggle = (key: string) => setKeys((current) => (current.has(key) ? withoutDependents(current, key) : withRequirements([...current, key])));
 
   const save = async () => {
     if (!name.trim()) return toast.error("Give the role a name, e.g. Cashier");
@@ -294,35 +292,7 @@ export function RoleForm({ role }: { role: Role | null }) {
         )}
       </FormSection>
 
-      <div className="space-y-4">
-        {PERMISSION_GROUPS.map((group) => (
-          <div key={group.title} className="rounded-2xl border border-ink/10 bg-white shadow-[0_1px_2px_rgba(32,40,59,0.04)]">
-            <p className="border-b border-ink/8 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.15em] text-ink/50">{group.title}</p>
-            <ul className="divide-y divide-ink/6">
-              {group.permissions.map((p) => {
-                const on = keys.has(p.key);
-                return (
-                  <li key={p.key}>
-                    <button type="button" role="switch" aria-checked={on} onClick={() => toggle(p.key)} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-ivory/60">
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2 text-sm font-semibold text-ink">
-                          {p.label}
-                          {p.sensitive && <Badge>Sensitive</Badge>}
-                        </span>
-                        <span className="block text-xs text-ink/55">{p.description}</span>
-                        {p.requires && <span className="block text-[11px] text-ink/40">Also turns on: {p.requires.map(permissionLabel).join(", ")}</span>}
-                      </span>
-                      <span className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${on ? "bg-ink" : "bg-ink/15"}`}>
-                        <span className={`h-4.5 w-4.5 rounded-full shadow-sm transition-transform ${on ? "translate-x-5.5 bg-lime" : "translate-x-1 bg-white"}`} />
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </div>
+      <PermissionList value={keys} onChange={setKeys} />
     </FormPage>
   );
 }
