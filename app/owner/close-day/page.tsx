@@ -4,14 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { AlertTriangle, CheckCheck, History, Lock, RotateCw } from "lucide-react";
+import { CheckCheck, Clock, History, Lock, RotateCw } from "lucide-react";
 import { ownerRequest, useOwnerData } from "@/stores/owner/api";
 import { ErrorState, SearchInput, Skeleton, rwf } from "@/app/owner/components/ui";
 import { Button, Field, FormSection, LinkButton, MoneyInput, TextArea } from "@/app/owner/components/forms";
 import { COUNTED, METHOD_LABEL, qty, when, type Closing, type Preview } from "./closing";
 
-// The end of the business day: no order left open, the money counted, the
-// stock counted. The owners get the summary on their phone and WhatsApp.
+// The end of the business day (today only): the money counted, the stock
+// counted, a note when money doesn't match. Orders not paid yet stay open.
+// The owners get the summary on their phone and WhatsApp.
 export default function CloseDayPage() {
   const router = useRouter();
   const preview = useOwnerData<Preview>("/day-closings/preview");
@@ -41,11 +42,14 @@ export default function CloseDayPage() {
   const rows = p.stock.filter((r) => !q || r.name.toLowerCase().includes(q));
   const countedRows = p.stock.filter((r) => counts[r.productId] !== undefined && counts[r.productId] !== "");
   const off = countedRows.filter((r) => Number(counts[r.productId]) !== r.expected);
-  const blocked = p.openOrders.length > 0;
+  const closed = p.alreadyClosed;
+  const moneyOff = moneyFilled && Math.round(difference) !== 0;
+  const noteMissing = moneyOff && !note.trim();
 
   const close = async () => {
-    if (blocked) return toast.error("Pay or cancel the open orders first.");
+    if (closed) return toast.error("Today is already closed.");
     if (!moneyFilled) return toast.error("Enter the cash, MoMo and card you counted (0 when there is none).");
+    if (noteMissing) return toast.error("Money doesn't match: write a note saying why.");
     setBusy(true);
     try {
       const saved = await ownerRequest<Closing>("/day-closings", {
@@ -72,8 +76,8 @@ export default function CloseDayPage() {
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ink/45">Finance</p>
           <h1 className="mt-1 text-2xl font-bold tracking-[-0.02em] text-ink md:text-[28px]">Close the day</h1>
           <p className="mt-1 text-sm text-ink/60">
-            Since {when(p.from)}
-            {p.lastClosedAt ? " (the last closing)" : " (midnight: no closing yet)"}. The owners get the summary on their phone and WhatsApp.
+            {new Date(`${p.businessDay}T12:00:00`).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}, from midnight until now. The owners
+            get the summary on their phone and WhatsApp.
           </p>
         </div>
         <div className="flex gap-2">
@@ -86,14 +90,27 @@ export default function CloseDayPage() {
         </div>
       </div>
 
-      {/* 1. Open orders block closing */}
-      {blocked ? (
-        <section className="rounded-2xl border border-rose-200 bg-rose-50/60 p-5">
-          <p className="flex items-center gap-2 text-sm font-bold text-rose-800">
-            <AlertTriangle className="h-4 w-4" /> {p.openOrders.length} order{p.openOrders.length === 1 ? " is" : "s are"} still open
+      {closed && (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-ink px-5 py-4 text-white">
+          <p className="text-sm">
+            <span className="font-semibold text-lime">Today is already closed</span> by {closed.closedByName} at {when(closed.closedAt)}. A day is closed once.
           </p>
-          <p className="mt-1 text-sm text-rose-800/80">Take payment or cancel each one, then press Refresh. The day can&apos;t close while money is still owed on an order.</p>
-          <ul className="mt-3 divide-y divide-rose-200/70 rounded-xl bg-white">
+          <LinkButton href={`/owner/close-day/${closed.id}`} tone="lime" small>
+            See the summary
+          </LinkButton>
+        </section>
+      )}
+
+      {/* 1. Today's orders: unpaid ones are a reminder, they don't stop closing */}
+      {p.openOrders.length > 0 ? (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5">
+          <p className="flex items-center gap-2 text-sm font-bold text-amber-900">
+            <Clock className="h-4 w-4" /> {p.openOrders.length} order{p.openOrders.length === 1 ? " from today is" : "s from today are"} not paid yet
+          </p>
+          <p className="mt-1 text-sm text-amber-900/80">
+            You can still close the day. They stay open and are paid later; the summary mentions them. Their money isn&apos;t expected in the drawer.
+          </p>
+          <ul className="mt-3 divide-y divide-amber-200/70 rounded-xl bg-white">
             {p.openOrders.map((o) => (
               <li key={o.id}>
                 <Link href={`/owner/orders/${o.id}`} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm hover:bg-ivory">
@@ -111,7 +128,15 @@ export default function CloseDayPage() {
         </section>
       ) : (
         <p className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-5 py-3 text-sm font-medium text-emerald-800">
-          <CheckCheck className="h-4 w-4" /> No open orders. {p.orders.paid} paid · {rwf(p.orders.paidTotal)} in sales · {p.orders.cancelled} cancelled.
+          <CheckCheck className="h-4 w-4" /> Every order from today is paid or cancelled. {p.orders.paid} paid · {rwf(p.orders.paidTotal)} in sales · {p.orders.cancelled} cancelled.
+        </p>
+      )}
+      {p.olderOpenOrders > 0 && (
+        <p className="text-xs text-ink/55">
+          {p.olderOpenOrders} open order{p.olderOpenOrders === 1 ? "" : "s"} from before today {p.olderOpenOrders === 1 ? "isn't" : "aren't"} part of this day.{" "}
+          <Link href="/owner/orders" className="font-semibold underline">
+            See orders
+          </Link>
         </p>
       )}
 
@@ -250,17 +275,29 @@ export default function CloseDayPage() {
         </div>
       </FormSection>
 
-      <FormSection title="Note" description="Optional, sent with the summary. e.g. why money is short.">
-        <Field label="Note">
-          <TextArea value={note} onChange={(e) => setNote(e.target.value)} />
+      <FormSection
+        title="Note"
+        description={moneyOff ? "Required: the money doesn't match. Say why, e.g. change given from the drawer." : "Optional when the money matches. Sent with the summary."}
+      >
+        <Field label={moneyOff ? "Note (required)" : "Note"}>
+          <TextArea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder={moneyOff ? "Why is money missing or over?" : "Anything the owners should know"}
+            className={noteMissing ? "border-rose-300 focus:border-rose-500" : ""}
+          />
         </Field>
       </FormSection>
 
       <div className="sticky bottom-4 z-10 flex flex-wrap items-center justify-end gap-3 rounded-2xl border border-ink/10 bg-white/95 px-4 py-3 shadow-[0_8px_24px_rgba(32,40,59,0.10)] backdrop-blur">
         <span className="mr-auto text-xs text-ink/55">
-          {blocked ? "Pay or cancel the open orders first." : "Counted stock replaces the system number, so tomorrow opens with what is really there."}
+          {closed
+            ? "Today is already closed."
+            : noteMissing
+              ? "Write a note: the money doesn't match."
+              : "Counted stock replaces the system number, so tomorrow opens with what is really there."}
         </span>
-        <Button tone="lime" icon={Lock} busy={busy} disabled={blocked} onClick={close}>
+        <Button tone="lime" icon={Lock} busy={busy} disabled={!!closed} onClick={close}>
           Close the day
         </Button>
       </div>

@@ -34,7 +34,7 @@ export default function ClosingPage({ params }: { params: Promise<{ id: string }
 
       <div className="grid gap-4 sm:grid-cols-3">
         {[
-          { icon: Receipt, label: "Sales", value: rwf(c.orders.paidTotal), hint: `${c.orders.paid} paid · ${c.orders.cancelled} cancelled` },
+          { icon: Receipt, label: "Sales", value: rwf(c.orders.paidTotal), hint: `${c.orders.paid} paid · ${c.orders.cancelled} cancelled${c.orders.open ? ` · ${c.orders.open} not paid yet` : ""}` },
           {
             icon: Banknote,
             label: "Money",

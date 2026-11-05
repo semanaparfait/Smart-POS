@@ -31,10 +31,13 @@ export interface Preview {
   businessDay: string;
   from: string;
   to: string;
-  lastClosedAt: string | null;
+  // Today was already closed: only one closing per day.
+  alreadyClosed: { id: string; closedAt: string; closedByName: string } | null;
+  // Open orders from before today: not part of this day.
+  olderOpenOrders: number;
   openOrders: { id: string; createdAt: string; status: string; total: number; staff: string; customerName: string | null }[];
   money: ClosingMoney;
-  orders: { paid: number; paidTotal: number; cancelled: number };
+  orders: { paid: number; paidTotal: number; cancelled: number; open?: number };
   moneyChecks: { verified: number; flagged: number };
   stock: StockRow[];
 }
@@ -46,7 +49,7 @@ export interface Closing {
   closedAt: string;
   closedByName: string;
   money: ClosingMoney;
-  orders: { paid: number; paidTotal: number; cancelled: number };
+  orders: { paid: number; paidTotal: number; cancelled: number; open?: number };
   stock: StockRow[];
   note: string | null;
 }
