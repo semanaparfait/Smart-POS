@@ -216,7 +216,7 @@ export function ProductForm({ product, categories, products }: { product: Produc
                       <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-lg bg-ivory">
                         {img ? (
                           // eslint-disable-next-line @next/next/no-img-element -- the API's storage
-                          <img src={img} alt="" className="h-full w-full object-cover" />
+                          <img loading="lazy" decoding="async" src={img} alt="" className="h-full w-full object-cover" />
                         ) : (
                           <Folder className="h-3.5 w-3.5 text-ink/45" />
                         )}

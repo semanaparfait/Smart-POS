@@ -338,7 +338,7 @@ export function PhotoPicker({
       <div className={`flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden bg-ivory ring-1 ring-inset ring-ink/10 ${round ? "rounded-full" : "rounded-2xl"}`}>
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element -- a local preview or the API's storage
-          <img src={preview} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={preview} alt="" className="h-full w-full object-cover" />
         ) : (
           <span className="text-[11px] font-semibold text-ink/40">No photo</span>
         )}

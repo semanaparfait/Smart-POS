@@ -154,7 +154,7 @@ export function ServiceForm({ existing, onUnitsChanged }: { existing: Service | 
           <label className="flex h-24 w-24 shrink-0 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl bg-ivory ring-1 ring-inset ring-ink/10 hover:opacity-80">
             {imageUri ? (
               // eslint-disable-next-line @next/next/no-img-element -- a local preview, a picked picture or the API's storage
-              <img src={imageUri} alt="" className="h-full w-full object-cover" />
+              <img loading="lazy" decoding="async" src={imageUri} alt="" className="h-full w-full object-cover" />
             ) : (
               <>
                 <Camera className="h-5 w-5 text-ink/40" />

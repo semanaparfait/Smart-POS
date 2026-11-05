@@ -3,7 +3,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bike, Download, Receipt, ShieldCheck, Store } from "lucide-react";
-import { useOwnerData } from "@/stores/owner/api";
+import { ordersSince, useOwnerData } from "@/stores/owner/api";
 import type { Order } from "@/app/owner/types";
 import { Avatar, Badge, Card, EmptyState, ErrorState, PageHeader, SearchInput, Skeleton, Tabs, dayKey, formatDate, personName, rwf, toNumber } from "@/app/owner/components/ui";
 import { LinkButton } from "@/app/owner/components/forms";
@@ -63,9 +63,10 @@ const dayLabel = (iso: string) => {
 // Every sale from every till: each worker's orders, and whether their money was checked.
 export default function OwnerOrders() {
   const router = useRouter();
-  const { data, loading, error, reload } = useOwnerData<Order[]>("/orders");
-  const checks = useOwnerData<Check[]>("/money-checks");
   const [period, setPeriod] = useState<Period>("today");
+  // Only the period on screen is loaded ("All" loads everything).
+  const { data, loading, error, reload } = useOwnerData<Order[]>(ordersSince(periodStart(period)));
+  const checks = useOwnerData<Check[]>("/money-checks");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [check, setCheck] = useState<CheckFilter>("all");
   const [workerId, setWorkerId] = useState<string | null>(null);

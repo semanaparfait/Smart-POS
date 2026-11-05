@@ -116,6 +116,7 @@ export default function TopNavBar() {
 
   const q = query.trim().toLowerCase();
   const matches = q ? (data?.companies ?? []).filter((c) => [c.name, c.code, c.location].some((v) => v?.toLowerCase().includes(q))).slice(0, 6) : [];
+  const profileImage = user?.picture?.thumbnailUrl ?? user?.picture?.url;
 
   const go = (href: string) => {
     setSearchOpen(false);
@@ -270,7 +271,12 @@ export default function TopNavBar() {
             }}
             className={`flex items-center gap-3 rounded-xl py-1 pl-1 pr-2.5 text-left transition-colors hover:bg-ivory focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime ${userOpen ? "bg-ivory" : ""}`}
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink text-xs font-bold tracking-wide text-lime">{initials(user?.name)}</span>
+            {profileImage ? (
+              // eslint-disable-next-line @next/next/no-img-element -- profile photos come from the API's storage
+              <img src={profileImage} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
+            ) : (
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink text-xs font-bold tracking-wide text-lime">{initials(user?.name)}</span>
+            )}
             <span className="hidden min-w-0 leading-tight sm:block">
               <span className="block max-w-40 truncate text-sm font-semibold text-ink">{user?.name ?? "Not signed in"}</span>
               <span className="block max-w-40 truncate text-xs text-ink/60">Super admin</span>
@@ -281,7 +287,12 @@ export default function TopNavBar() {
           {userOpen && (
             <div role="menu" className={`${popover} w-64`}>
               <div className="flex items-center gap-3 border-b border-ink/6 bg-ivory/70 px-4 py-3.5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-ink text-xs font-bold text-lime">{initials(user?.name)}</span>
+                {profileImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- profile photos come from the API's storage
+                  <img src={profileImage} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+                ) : (
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-ink text-xs font-bold text-lime">{initials(user?.name)}</span>
+                )}
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-ink">{user?.name ?? "Not signed in"}</span>
                   <span className="block truncate text-xs text-ink/60">{user?.email ?? "Please log in"}</span>

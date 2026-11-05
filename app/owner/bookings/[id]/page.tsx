@@ -122,7 +122,7 @@ function BookingView({ booking, onSaved }: { booking: Booking; onSaved: (b: Book
         <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-ivory ring-1 ring-ink/10">
           {booking.service.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- the API's storage
-            <img src={booking.service.imageUrl} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={booking.service.imageUrl} alt="" className="h-full w-full object-cover" />
           ) : (
             <BedDouble className="h-5 w-5 text-ink/40" />
           )}

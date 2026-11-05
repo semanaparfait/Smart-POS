@@ -77,6 +77,8 @@ type View = "summary" | "expenses" | "salaries" | "checks" | "credits" | "servic
 
 export default function MoneyTab({ companyId, orders, expenses, checks, staff, now, services }: { companyId: string; orders: Order[]; expenses: Expense[]; checks: MoneyCheck[]; staff: Worker[]; now: number; services: boolean }) {
   const [view, setView] = useState<View>("summary");
+  // Credit stays owed however old the sale.
+  const creditOrders = useOwnerData<Order[]>(`/orders?credit=true&companyId=${companyId}`);
   const servicePay = useOwnerData<CheckedPayment[]>(services && view === "services" ? `/booking-payments?companyId=${companyId}` : null);
 
   const today = new Date(now);
@@ -88,7 +90,7 @@ export default function MoneyTab({ companyId, orders, expenses, checks, staff, n
   const paid = orders.filter((o) => o.status === "COMPLETED" && dayKey(new Date(paidAt(o))).startsWith(month));
   const sales = paid.reduce((s, o) => s + toNumber(o.total), 0);
   const goodsCost = paid.reduce((s, o) => s + (o.items ?? []).reduce((t, i) => t + i.quantity * toNumber(i.unitCost ?? i.product?.buyingPrice), 0), 0);
-  const credits = creditsOf(orders);
+  const credits = creditsOf(creditOrders.data ?? []);
   const creditTotal = credits.reduce((s, c) => s + c.amount, 0);
   const flagged = checks.filter((c) => c.status === "FLAGGED");
   const pendingExpenses = expenses.filter((e) => e.status === "PENDING");

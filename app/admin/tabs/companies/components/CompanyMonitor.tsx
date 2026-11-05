@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AlertTriangle, Banknote, MonitorSmartphone, Package, Receipt, RotateCw, Scale, Trophy, Users, Wallet } from "lucide-react";
-import { useOwnerData } from "@/stores/owner/api";
+import { ordersSince, useOwnerData } from "@/stores/owner/api";
 import type { Order, Product } from "@/app/owner/types";
 import { Skeleton, Tabs, dayKey, rwf, toNumber } from "@/app/owner/components/ui";
 import { paidAt, type Expense } from "@/app/owner/finance/money";
@@ -22,7 +22,8 @@ type Tab = "overview" | "orders" | "deliveries" | "services" | "workers" | "devi
 export default function CompanyMonitor({ companyId }: { companyId: string }) {
   const q = `companyId=${encodeURIComponent(companyId)}`;
   const details = useOwnerData<CompanyDetails>(`/companies/${companyId}`);
-  const orders = useOwnerData<Order[]>(`/orders?${q}`);
+  // The last 90 days (and anything still open); all-time totals come from the server.
+  const orders = useOwnerData<Order[]>(ordersSince(90, { companyId }));
   const expenses = useOwnerData<Expense[]>(`/expenses?${q}`);
   const checks = useOwnerData<MoneyCheck[]>(`/money-checks?${q}`);
   const staff = useOwnerData<Worker[]>(`/staff-debts?${q}`);
@@ -120,7 +121,7 @@ export default function CompanyMonitor({ companyId }: { companyId: string }) {
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <Stat icon={Banknote} label="Sales today" value={rwf(sum(paidOn(today)))} hint={`${paidOn(today).length} paid orders`} />
                 <Stat icon={Receipt} label="Sales this month" value={rwf(sum(monthPaid))} hint={`${all.filter((o) => o.status === "PENDING").length} orders not paid yet`} />
-                <Stat icon={Banknote} label="All-time sales" value={rwf(sum(paid))} hint={`${paid.length} paid orders`} />
+                <Stat icon={Banknote} label="All-time sales" value={rwf(st?.orders?.COMPLETED?.total ?? 0)} hint={`${st?.orders?.COMPLETED?.count ?? 0} paid orders`} />
                 <Stat icon={Wallet} label="On credit" value={rwf(credit)} hint="Owed by customers" tone={credit ? "text-rose-600" : undefined} />
                 <Stat icon={Users} label="Workers" value={String(st?.employees ?? d?.employees.length ?? 0)} hint={`${st?.activeUsers ?? 0} of ${st?.users ?? 0} accounts active`} />
                 <Stat icon={MonitorSmartphone} label="Devices online" value={`${st?.onlineDevices ?? 0} / ${st?.devices ?? 0}`} hint={`${st?.devicesInUse ?? 0} in use now`} />

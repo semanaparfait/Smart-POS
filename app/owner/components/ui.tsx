@@ -162,7 +162,7 @@ export function Badge({ tone = "muted", children }: { tone?: keyof typeof BADGE_
 export function Avatar({ name, src, size = 36 }: { name?: string | null; src?: string | null; size?: number }) {
   return src ? (
     // eslint-disable-next-line @next/next/no-img-element -- photos come from the API's storage
-    <img src={src} alt="" className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />
+    <img loading="lazy" decoding="async" src={src} alt="" className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />
   ) : (
     <span
       className="flex shrink-0 items-center justify-center rounded-full bg-ink font-bold text-lime"

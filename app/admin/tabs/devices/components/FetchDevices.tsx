@@ -90,7 +90,7 @@ export const initials = (name?: string) =>
 export function CompanyBadge({ name, logo, size = "h-7 w-7 text-[10px]" }: { name?: string; logo?: string | null; size?: string }) {
   return logo?.trim() ? (
     // eslint-disable-next-line @next/next/no-img-element -- logos come from arbitrary hosts
-    <img src={logo} alt="" className={`${size} shrink-0 rounded-lg bg-white object-cover ring-1 ring-ink/12`} />
+    <img loading="lazy" decoding="async" src={logo} alt="" className={`${size} shrink-0 rounded-lg bg-white object-cover ring-1 ring-ink/12`} />
   ) : (
     <span className={`${size} flex shrink-0 items-center justify-center rounded-lg bg-ink/6 font-bold text-ink/70`}>
       {initials(name)}

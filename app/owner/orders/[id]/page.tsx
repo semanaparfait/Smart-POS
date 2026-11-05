@@ -125,7 +125,7 @@ export default function OrderPage() {
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ivory">
                     {photo ? (
                       // eslint-disable-next-line @next/next/no-img-element -- the API's storage
-                      <img src={photo} alt="" className="h-full w-full object-cover" />
+                      <img loading="lazy" decoding="async" src={photo} alt="" className="h-full w-full object-cover" />
                     ) : (
                       <ImageIcon className="h-4 w-4 text-ink/35" />
                     )}

@@ -19,7 +19,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import useAuthStore from "@/stores/auth/authstore";
-import { useOwnerData } from "@/stores/owner/api";
+import { CREDIT_ORDERS, ordersSince, useOwnerData } from "@/stores/owner/api";
 import type { Order, Product } from "@/app/owner/types";
 import { Card, ErrorState, PageHeader, Skeleton, Tabs, dayKey, rwf, toNumber } from "@/app/owner/components/ui";
 import { Button, TextInput, todayKey } from "@/app/owner/components/forms";
@@ -75,7 +75,9 @@ export default function FinanceOverview() {
   const [lastDay, setLastDay] = useState(todayKey());
   const { from, to } = useMemo(() => rangeOf(firstDay, lastDay), [firstDay, lastDay]);
 
-  const orders = useOwnerData<Order[]>("/orders");
+  const orders = useOwnerData<Order[]>(ordersSince(firstDay));
+  // Credit is owed however old the sale.
+  const creditOrders = useOwnerData<Order[]>(CREDIT_ORDERS);
   const products = useOwnerData<Product[]>("/products");
   const expenses = useOwnerData<Expense[]>("/expenses");
   const salaries = useOwnerData<{ monthly: number }>("/expenses/salaries");
@@ -89,7 +91,7 @@ export default function FinanceOverview() {
   const yesterday = dayKey(shiftDays(new Date(), -1));
   const shortcut = firstDay === lastDay && firstDay === today ? "today" : firstDay === lastDay && firstDay === yesterday ? "yesterday" : "";
 
-  const refresh = () => [orders, products, expenses, salaries, staff, checks, services, waiting, owedBookings].forEach((d) => d.reload());
+  const refresh = () => [orders, creditOrders, products, expenses, salaries, staff, checks, services, waiting, owedBookings].forEach((d) => d.reload());
 
   const money = useMemo(() => {
     const inRange = (value: string) => {
@@ -141,7 +143,7 @@ export default function FinanceOverview() {
     const stockValue = (products.data ?? []).filter((p) => p.trackStock).reduce((sum, p) => sum + Math.max(0, toNumber(p.stockQuantity)) * toNumber(p.buyingPrice), 0);
     let credits = 0;
     let oldCredits = 0;
-    for (const o of orders.data ?? []) {
+    for (const o of creditOrders.data ?? []) {
       if (o.status !== "COMPLETED") continue;
       for (const p of o.payments ?? []) {
         if (String(p.method).toUpperCase() !== "CREDIT") continue;
@@ -180,7 +182,7 @@ export default function FinanceOverview() {
       flagged,
       missing: (services.data ?? []).filter((p) => p.receipt === "MISSING"),
     };
-  }, [orders.data, services.data, expenses.data, salaries.data, staff.data, products.data, owedBookings.data, checks.data, from, to, today]);
+  }, [orders.data, creditOrders.data, services.data, expenses.data, salaries.data, staff.data, products.data, owedBookings.data, checks.data, from, to, today]);
 
   if (orders.error) return <ErrorState message={orders.error} onRetry={orders.reload} />;
 

@@ -34,7 +34,7 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
       <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-ivory ring-1 ring-ink/10">
         {service.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- the API's storage
-          <img src={service.imageUrl} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={service.imageUrl} alt="" className="h-full w-full object-cover" />
         ) : (
           <BedDouble className="h-5 w-5 text-ink/40" />
         )}

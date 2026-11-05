@@ -7,7 +7,8 @@ import type {
 import useAuthStore from "@/stores/auth/authstore";
 
 const getAuthToken = (): string | null => {
-  return useAuthStore.getState().token || localStorage.getItem("accessToken");
+  // Kept in memory only and renewed by the auth store.
+  return useAuthStore.getState().token;
 };
 
 export type RegistrationAction = "APPROVE" | "REJECT";

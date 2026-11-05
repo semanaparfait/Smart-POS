@@ -4,7 +4,8 @@ import type { UserResponse, UserPayload, createUserResponse } from "@/stores/use
 import useAuthStore from "@/stores/auth/authstore";
 
 const getAuthToken = (): string | null => {
-  return useAuthStore.getState().token || localStorage.getItem("accessToken");
+  // Kept in memory only and renewed by the auth store.
+  return useAuthStore.getState().token;
 };
 
 /** Calls the users API; throws with the server's message when the request fails */

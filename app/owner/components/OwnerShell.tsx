@@ -69,6 +69,7 @@ const SECTIONS: { title: string; items: NavItem[] }[] = [
           { label: "Overview", href: "/owner/finance" },
           { label: "Verification", href: "/owner/money-checks" },
           { label: "Money summary", href: "/owner/finance/summary" },
+          { label: "Close the day", href: "/owner/close-day" },
           { label: "Service money", href: "/owner/finance/service-money", extra: "services" },
           { label: "Expenses", href: "/owner/expenses" },
           { label: "Salaries & debts", href: "/owner/salaries" },
@@ -271,7 +272,7 @@ export default function OwnerShell({ children }: { children: React.ReactNode }) 
               <p className="text-sm font-semibold text-ink">{user?.name}</p>
               <p className="text-[11px] text-ink/50">Owner</p>
             </div>
-            <Avatar name={user?.name} size={36} />
+            <Avatar name={user?.name} src={user?.picture?.thumbnailUrl ?? user?.picture?.url} size={36} />
             <button
               type="button"
               onClick={signOut}

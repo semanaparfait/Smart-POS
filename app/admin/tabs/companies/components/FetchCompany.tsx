@@ -54,7 +54,7 @@ const initials = (name?: string) =>
 function CompanyAvatar({ company, size = "h-12 w-12 text-sm" }: { company: CompanyType; size?: string }) {
   return company.logo ? (
     // eslint-disable-next-line @next/next/no-img-element -- logos come from arbitrary hosts
-    <img
+    <img loading="lazy" decoding="async"
       src={company.logo}
       alt=""
       className={`${size} shrink-0 rounded-xl bg-white object-cover ring-1 ring-ink/12`}

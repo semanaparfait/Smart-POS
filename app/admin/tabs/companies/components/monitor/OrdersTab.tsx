@@ -99,7 +99,7 @@ export default function OrdersTab({ orders, now, companyName }: { orders: Order[
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Choice value={when} onChange={setWhen} options={[{ value: "today", label: "Today" }, { value: "7", label: "7 days" }, { value: "30", label: "30 days" }, { value: "all", label: "All" }]} />
+        <Choice value={when} onChange={setWhen} options={[{ value: "today", label: "Today" }, { value: "7", label: "7 days" }, { value: "30", label: "30 days" }, { value: "all", label: "90 days" }]} />
         <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-8 rounded-lg border border-ink/12 bg-white px-2 text-xs text-ink">
           <option value="ALL">Every status</option>
           {Object.entries(ORDER_STATUS).map(([k, v]) => (

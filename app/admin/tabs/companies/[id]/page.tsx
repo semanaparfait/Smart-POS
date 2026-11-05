@@ -206,7 +206,7 @@ export default function CompanyDetailPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             {company.logo ? (
               // eslint-disable-next-line @next/next/no-img-element -- logos come from arbitrary hosts
-              <img
+              <img loading="lazy" decoding="async"
                 src={company.logo}
                 alt=""
                 className="relative z-10 -mt-10 h-20 w-20 shrink-0 rounded-2xl bg-white object-cover shadow-md ring-4 ring-white"

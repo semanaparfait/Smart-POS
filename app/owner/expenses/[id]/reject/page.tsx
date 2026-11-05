@@ -25,7 +25,7 @@ export default function RejectExpensePage() {
         expense.proofUrl ? (
           <a href={expense.proofUrl} target="_blank" rel="noopener noreferrer" className="block w-40 overflow-hidden rounded-xl ring-1 ring-ink/10">
             {/* eslint-disable-next-line @next/next/no-img-element -- the receipt photo in the API's storage */}
-            <img src={expense.proofUrl} alt="Receipt" className="w-full object-cover" />
+            <img loading="lazy" decoding="async" src={expense.proofUrl} alt="Receipt" className="w-full object-cover" />
           </a>
         ) : undefined
       }

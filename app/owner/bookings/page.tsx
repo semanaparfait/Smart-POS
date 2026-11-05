@@ -5,7 +5,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { BedDouble, CalendarDays, Plus, RotateCw, Settings2, Wrench, Check } from "lucide-react";
 import useAuthStore from "@/stores/auth/authstore";
-import { ownerRequest, useOwnerData } from "@/stores/owner/api";
+import { everyWhileVisible, ownerRequest, useOwnerData } from "@/stores/owner/api";
 import { Card, EmptyState, ErrorState, PageHeader, Skeleton, Tabs, rwf, toNumber } from "@/app/owner/components/ui";
 import { Button, LinkButton, TextInput, todayKey } from "@/app/owner/components/forms";
 import FeatureOff from "@/app/owner/components/FeatureOff";
@@ -100,7 +100,7 @@ function ServiceCard({ service, bookings, now, onStatus }: { service: Service; b
         <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-ivory ring-1 ring-ink/10">
           {service.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- the API's storage
-            <img src={service.imageUrl} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={service.imageUrl} alt="" className="h-full w-full object-cover" />
           ) : (
             <BedDouble className="h-4.5 w-4.5 text-ink/40" />
           )}
@@ -172,8 +172,7 @@ export default function OwnerBookings() {
   // The desk keeps itself up to date.
   useEffect(() => {
     if (!on) return;
-    const timer = setInterval(reloadAll, REFRESH_MS);
-    return () => clearInterval(timer);
+    return everyWhileVisible(reloadAll, REFRESH_MS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [on, day]);
 

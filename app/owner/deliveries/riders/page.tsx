@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Bike, Crown, Phone, UserPlus } from "lucide-react";
 import useAuthStore from "@/stores/auth/authstore";
-import { useOwnerData } from "@/stores/owner/api";
+import { everyWhileVisible, ordersSince, useOwnerData } from "@/stores/owner/api";
 import type { Order } from "@/app/owner/types";
 import { Card, EmptyState, ErrorState, PageHeader, Skeleton, Tabs, dayKey, initials, rwf, toNumber } from "@/app/owner/components/ui";
 import { LinkButton } from "@/app/owner/components/forms";
@@ -135,7 +135,8 @@ function RiderCard({ stats, top, now }: { stats: Stats; top: boolean; now: numbe
 // The delivery team: who is out now, what they carry and how they did.
 export default function RidersPage() {
   const on = useAuthStore((s) => s.user?.company?.features?.delivery !== false);
-  const orders = useOwnerData<Order[]>(on ? "/orders" : null);
+  // Deliveries of the last month cover every period on this page.
+  const orders = useOwnerData<Order[]>(on ? ordersSince(31, { type: "DELIVERY" }) : null);
   const riders = useOwnerData<Rider[]>(on ? "/deliveries/riders" : null);
   const [period, setPeriod] = useState<Period>("today");
   const [now, setNow] = useState(() => Date.now());
@@ -143,13 +144,13 @@ export default function RidersPage() {
   // Keeps trips and their timers moving.
   useEffect(() => {
     if (!on) return;
-    const refresh = setInterval(() => {
+    const stopRefresh = everyWhileVisible(() => {
       orders.reload();
       riders.reload();
     }, 60_000);
     const tick = setInterval(() => setNow(Date.now()), 30_000);
     return () => {
-      clearInterval(refresh);
+      stopRefresh();
       clearInterval(tick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

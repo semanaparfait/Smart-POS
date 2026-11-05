@@ -191,7 +191,7 @@ export default function OwnerProducts() {
                           <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-ivory ring-1 ring-ink/10">
                             {photo ? (
                               // eslint-disable-next-line @next/next/no-img-element -- photos come from the API's storage
-                              <img src={photo} alt="" className="h-full w-full object-cover" />
+                              <img loading="lazy" decoding="async" src={photo} alt="" className="h-full w-full object-cover" />
                             ) : (
                               <ImageIcon className="h-4.5 w-4.5 text-ink/35" />
                             )}

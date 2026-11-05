@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Bike, CircleDollarSign, Download, MapPin, Phone, Route, Truck } from "lucide-react";
 import useAuthStore from "@/stores/auth/authstore";
-import { useOwnerData } from "@/stores/owner/api";
+import { everyWhileVisible, ordersSince, useOwnerData } from "@/stores/owner/api";
 import type { Order } from "@/app/owner/types";
 import { Badge, Card, EmptyState, ErrorState, PageHeader, SearchInput, Skeleton, StatCard, Tabs, formatDate, personName, rwf, toNumber } from "@/app/owner/components/ui";
 import { Button } from "@/app/owner/components/forms";
@@ -180,16 +180,16 @@ function DeliveryCard({ order }: { order: Order }) {
 export default function OwnerDeliveries() {
   const user = useAuthStore((s) => s.user);
   const on = user?.company?.features?.delivery !== false;
-  const { data, loading, error, reload } = useOwnerData<Order[]>(on ? "/orders" : null);
   const [period, setPeriod] = useState<Period>("today");
+  // Deliveries only, and only the period on screen (plus any still open).
+  const { data, loading, error, reload } = useOwnerData<Order[]>(on ? ordersSince(periodRange(period)?.[0] ?? null, { type: "DELIVERY" }) : null);
   const [status, setStatus] = useState<"all" | DeliveryStatus>("all");
   const [search, setSearch] = useState("");
 
   // Keeps up with deliveries moving along.
   useEffect(() => {
     if (!on) return;
-    const timer = setInterval(reload, 60_000);
-    return () => clearInterval(timer);
+    return everyWhileVisible(reload, 60_000);
   }, [on, reload]);
 
   const inPeriod = useMemo(() => {

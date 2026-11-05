@@ -143,7 +143,7 @@ function AttentionRow({ icon: Icon, title, detail, count, href, danger }: { icon
 function CompanyMark({ c }: { c: PlatformCompany }) {
   return c.logo ? (
     // eslint-disable-next-line @next/next/no-img-element -- logos come from arbitrary hosts
-    <img src={c.logo} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-ink/10" />
+    <img loading="lazy" decoding="async" src={c.logo} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-ink/10" />
   ) : (
     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink text-[11px] font-semibold text-lime">
       {c.name

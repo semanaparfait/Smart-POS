@@ -5,7 +5,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { AlertCircle, CalendarDays, CheckCheck, CheckCircle2, ChevronDown, ChevronRight, Clock, Download, Flag, Info, ShieldCheck, Wallet, type LucideIcon } from "lucide-react";
 import useAuthStore from "@/stores/auth/authstore";
-import { useOwnerData } from "@/stores/owner/api";
+import { ordersSince, useOwnerData } from "@/stores/owner/api";
 import type { Order } from "@/app/owner/types";
 import { ErrorState, PageHeader, Skeleton, Tabs, dayKey, formatDate, rwf, toNumber } from "@/app/owner/components/ui";
 import { Button, TextInput } from "@/app/owner/components/forms";
@@ -95,7 +95,7 @@ export default function MoneySummary() {
   const first = days[0];
   const last = days[days.length - 1];
 
-  const orders = useOwnerData<Order[]>("/orders");
+  const orders = useOwnerData<Order[]>(first ? ordersSince(first) : null);
   const checks = useOwnerData<Check[]>("/money-checks");
   const expenses = useOwnerData<TillExpense[]>("/expenses");
   const services = useOwnerData<ServicePayment[]>(

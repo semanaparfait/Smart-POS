@@ -42,7 +42,7 @@ function CategoryRow({ category, count, onSaved }: { category: Category; count: 
       <label className="relative flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-ivory ring-1 ring-inset ring-ink/10 hover:opacity-80" title="Change photo">
         {img ? (
           // eslint-disable-next-line @next/next/no-img-element -- the API's storage
-          <img src={img} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={img} alt="" className="h-full w-full object-cover" />
         ) : (
           <Folder className="h-5 w-5 text-ink/40" />
         )}

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, Banknote, Check, ChevronRight, Cpu, Hourglass, ImageIcon, Package, Receipt, RotateCw, ShieldCheck, Tag, TrendingDown, TrendingUp, WifiOff, type LucideIcon } from "lucide-react";
 import useAuthStore from "@/stores/auth/authstore";
-import { useOwnerData } from "@/stores/owner/api";
+import { ordersSince, useOwnerData } from "@/stores/owner/api";
 import type { Device, Order, OrderItem, Product } from "@/app/owner/types";
 import { Avatar, Badge, Card, ErrorState, Skeleton, Tabs, dayKey, rwf, toNumber } from "@/app/owner/components/ui";
 import { Button } from "@/app/owner/components/forms";
@@ -139,7 +139,7 @@ function Thumb({ item }: { item: OrderItem }) {
     <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ivory">
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element -- the API's storage
-        <img src={src} alt="" className="h-full w-full object-cover" />
+        <img loading="lazy" decoding="async" src={src} alt="" className="h-full w-full object-cover" />
       ) : (
         <ImageIcon className="h-4 w-4 text-ink/35" />
       )}
@@ -166,7 +166,8 @@ function AttentionRow({ icon: Icon, title, detail, count, href, danger }: { icon
 
 export default function OwnerDashboard() {
   const user = useAuthStore((s) => s.user);
-  const orders = useOwnerData<Order[]>("/orders");
+  // The longest period (30 days) and the one before it, to compare.
+  const orders = useOwnerData<Order[]>(ordersSince(62));
   const devices = useOwnerData<Device[]>("/devices");
   const checks = useOwnerData<Check[]>("/money-checks");
   const lowStock = useOwnerData<Product[]>("/products/low-stock");

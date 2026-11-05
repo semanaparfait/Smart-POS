@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { BarChart3, Banknote, CheckCheck, ChevronLeft, ChevronRight, Info, Receipt, ShieldCheck, Trophy, Users } from "lucide-react";
 import useAuthStore from "@/stores/auth/authstore";
-import { useOwnerData } from "@/stores/owner/api";
+import { ordersSince, useOwnerData } from "@/stores/owner/api";
 import type { Order } from "@/app/owner/types";
 import { Avatar, Card, EmptyState, ErrorState, Skeleton, dayKey, rwf, toNumber } from "@/app/owner/components/ui";
 import { Button } from "@/app/owner/components/forms";
@@ -92,7 +92,8 @@ function rank(orders: Order[], checks: Check[], month: string): Row[] {
 // Employee of the month, from what the tills recorded.
 export default function WinnerPage() {
   const company = useAuthStore((s) => s.user?.company?.name);
-  const orders = useOwnerData<Order[]>("/orders");
+  // A year back, for the hall of fame.
+  const orders = useOwnerData<Order[]>(ordersSince(366));
   const checks = useOwnerData<Check[]>("/money-checks");
   const thisMonth = monthKeyOf(new Date());
   const [month, setMonth] = useState(thisMonth);

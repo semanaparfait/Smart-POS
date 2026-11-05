@@ -175,7 +175,7 @@ function WorkerCard({ worker, onSaved }: { worker: Worker; onSaved: (w: Worker[]
                     {p.proofUrl && (
                       <a href={p.proofUrl} target="_blank" rel="noopener noreferrer" className="h-8 w-8 shrink-0 overflow-hidden rounded-lg ring-1 ring-ink/10">
                         {/* eslint-disable-next-line @next/next/no-img-element -- the proof photo in the API's storage */}
-                        <img src={p.proofUrl} alt="Proof" className="h-full w-full object-cover" />
+                        <img loading="lazy" decoding="async" src={p.proofUrl} alt="Proof" className="h-full w-full object-cover" />
                       </a>
                     )}
                     <div className="min-w-0 flex-1">
@@ -207,7 +207,7 @@ function PendingPayment({ worker, payment, onSaved }: { worker: Worker; payment:
         {payment.proofUrl && (
           <a href={payment.proofUrl} target="_blank" rel="noopener noreferrer" className="h-11 w-11 shrink-0 overflow-hidden rounded-xl ring-1 ring-ink/10">
             {/* eslint-disable-next-line @next/next/no-img-element -- the proof photo in the API's storage */}
-            <img src={payment.proofUrl} alt="Proof" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={payment.proofUrl} alt="Proof" className="h-full w-full object-cover" />
           </a>
         )}
         <div className="min-w-0 flex-1">

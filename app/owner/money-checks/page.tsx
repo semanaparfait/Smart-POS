@@ -5,7 +5,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { ArrowRight, BadgeCheck, BedDouble, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, Clock, Flag, HandCoins, Receipt, RotateCcw, Scale, Wallet } from "lucide-react";
 import useAuthStore from "@/stores/auth/authstore";
-import { ownerRequest, useOwnerData } from "@/stores/owner/api";
+import { ordersSince, ownerRequest, useOwnerData } from "@/stores/owner/api";
 import type { Order } from "@/app/owner/types";
 import { Avatar, Badge, Card, EmptyState, ErrorState, PageHeader, Skeleton, StatCard, Tabs, dayKey, formatDate, rwf, toNumber } from "@/app/owner/components/ui";
 import { Button, MoneyInput, TextArea, TextInput, todayKey } from "@/app/owner/components/forms";
@@ -446,7 +446,7 @@ export default function OwnerMoneyChecks() {
 
   const from = new Date(`${date}T00:00:00`);
   const to = new Date(`${date}T23:59:59.999`);
-  const orders = useOwnerData<Order[]>("/orders");
+  const orders = useOwnerData<Order[]>(ordersSince(date));
   const checks = useOwnerData<Check[]>("/money-checks");
   const expenses = useOwnerData<TillExpense[]>("/expenses");
   const bookingMoney = useOwnerData<ServicePayment[]>(

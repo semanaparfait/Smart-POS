@@ -314,7 +314,7 @@ export function ImageSearch({
                   className={`relative h-26 w-26 overflow-hidden rounded-xl border-2 bg-ivory ${active ? "border-ink" : "border-transparent"}`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- a free picture from Wikimedia */}
-                  <img src={result.thumbnail} alt="" className="h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={result.thumbnail} alt="" className="h-full w-full object-cover" />
                   {active && (
                     <span className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-lime">
                       <Check className="h-4 w-4" />

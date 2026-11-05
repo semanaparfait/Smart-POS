@@ -49,7 +49,7 @@ function PendingRow({ expense, onDone }: { expense: Expense; onDone: () => void 
         {expense.proofUrl ? (
           <a href={expense.proofUrl} target="_blank" rel="noopener noreferrer" className="h-13 w-13 shrink-0 overflow-hidden rounded-xl bg-ivory ring-1 ring-ink/10">
             {/* eslint-disable-next-line @next/next/no-img-element -- the receipt photo in the API's storage */}
-            <img src={expense.proofUrl} alt="Receipt" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={expense.proofUrl} alt="Receipt" className="h-full w-full object-cover" />
           </a>
         ) : (
           <span className="flex h-13 w-13 shrink-0 items-center justify-center rounded-xl bg-ivory text-[10px] text-ink/45">No photo</span>
@@ -120,7 +120,7 @@ function ExpenseRow({ expense, today, onDone }: { expense: Expense; today: strin
         {expense.proofUrl ? (
           <a href={expense.proofUrl} target="_blank" rel="noopener noreferrer" className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-ivory ring-1 ring-ink/10" title="Receipt">
             {/* eslint-disable-next-line @next/next/no-img-element -- the receipt photo in the API's storage */}
-            <img src={expense.proofUrl} alt="Receipt" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={expense.proofUrl} alt="Receipt" className="h-full w-full object-cover" />
           </a>
         ) : (
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ivory text-ink/60">

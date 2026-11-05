@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { Check, KeyRound } from "lucide-react";
+import { Bug, Check, KeyRound } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 import useAuthStore from "@/stores/auth/authstore";
 import { ownerRequest } from "@/stores/owner/api";
 import type { superadminType } from "@/stores/auth/AuthTypes";
@@ -10,6 +11,49 @@ import { Button, Field, FormPage, FormSection, LinkButton, PhotoPicker, TextInpu
 
 type Fields = { name: string; phone: string; email: string };
 const fieldsOf = (u: superadminType): Fields => ({ name: u.name ?? "", phone: u.phone ?? "", email: u.email ?? "" });
+
+// Sends a test error from the website and from the server, to see that both
+// reach Sentry.
+function ErrorTrackingCheck() {
+  const [busy, setBusy] = useState<"web" | "server" | null>(null);
+  const websiteOn = !!process.env.NEXT_PUBLIC_SENTRY_DSN;
+
+  const testWebsite = () => {
+    if (!websiteOn) return toast.error("Error tracking isn't set up on the website. Add NEXT_PUBLIC_SENTRY_DSN and redeploy.");
+    setBusy("web");
+    Sentry.captureException(new Error(`SmartPOS test error from the website (${new Date().toISOString()})`));
+    void Sentry.flush(3000).finally(() => {
+      setBusy(null);
+      toast.success("Sent. In Sentry, open smartpos-website, then Issues.");
+    });
+  };
+
+  const testServer = async () => {
+    setBusy("server");
+    try {
+      await ownerRequest("/system/test-error", { method: "POST" });
+      toast.error("The server didn't fail as expected. Is it updated?");
+    } catch {
+      toast.success("Sent. In Sentry, open smartpos-server, then Issues. Nothing there? Check SENTRY_DSN on the server.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <FormSection title="Check error tracking" description="Sends a harmless test error to Sentry. It should appear there within a minute.">
+      <div className="flex flex-wrap gap-2">
+        <Button tone="outline" icon={Bug} busy={busy === "web"} onClick={testWebsite}>
+          Test the website
+        </Button>
+        <Button tone="outline" icon={Bug} busy={busy === "server"} onClick={testServer}>
+          Test the server
+        </Button>
+      </div>
+      {!websiteOn && <p className="text-xs text-ink/55">Website error tracking is off: NEXT_PUBLIC_SENTRY_DSN isn&apos;t set.</p>}
+    </FormSection>
+  );
+}
 
 // The super admin's own account: name, phone, email, picture.
 function Profile({ user }: { user: superadminType }) {
@@ -87,6 +131,7 @@ function Profile({ user }: { user: superadminType }) {
           )}
         </div>
       </FormSection>
+      <ErrorTrackingCheck />
     </FormPage>
   );
 }

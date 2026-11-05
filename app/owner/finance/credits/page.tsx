@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, ArrowRight, ChevronDown, ChevronUp, Clock, Hourglass, Phone, RotateCw, User, Users } from "lucide-react";
-import { useOwnerData } from "@/stores/owner/api";
+import { CREDIT_ORDERS, useOwnerData } from "@/stores/owner/api";
 import type { Order } from "@/app/owner/types";
 import { Avatar, Card, EmptyState, ErrorState, PageHeader, SearchInput, Skeleton, Tabs, formatDate, rwf } from "@/app/owner/components/ui";
 import { Button } from "@/app/owner/components/forms";
@@ -81,7 +81,7 @@ function CreditRow({ entry }: { entry: CreditEntry }) {
 
 // Customers who took goods on credit, when they took them and who served them.
 export default function CreditsPage() {
-  const { data, loading, error, reload } = useOwnerData<Order[]>("/orders");
+  const { data, loading, error, reload } = useOwnerData<Order[]>(CREDIT_ORDERS);
   const [search, setSearch] = useState("");
   const [period, setPeriod] = useState<Period>("all");
   const [sort, setSort] = useState<Sort>("amount");

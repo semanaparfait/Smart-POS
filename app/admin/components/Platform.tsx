@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect } from "react";
-import { useOwnerData } from "@/stores/owner/api";
+import { everyWhileVisible, useOwnerData } from "@/stores/owner/api";
 
 // What GET /companies/platform-overview gives: totals across every company.
 export interface PlatformCompany {
@@ -83,10 +83,7 @@ const PlatformContext = createContext<State>({ data: null, loading: true, error:
 export function PlatformProvider({ children }: { children: React.ReactNode }) {
   const state = useOwnerData<PlatformOverview>("/companies/platform-overview");
   const { reload } = state;
-  useEffect(() => {
-    const timer = setInterval(reload, 60_000);
-    return () => clearInterval(timer);
-  }, [reload]);
+  useEffect(() => everyWhileVisible(reload, 60_000), [reload]);
   return <PlatformContext.Provider value={state}>{children}</PlatformContext.Provider>;
 }
 
