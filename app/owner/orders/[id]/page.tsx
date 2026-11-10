@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CheckCircle2, CircleX, Flag, Hourglass, ImageIcon, Package, PlusCircle, ShieldCheck, User, Wallet } from "lucide-react";
+import { Armchair, ArrowLeft, Bike, CheckCircle2, CircleX, Flag, Hourglass, ImageIcon, Package, PlusCircle, ShieldCheck, Store, User, Wallet } from "lucide-react";
 import { useOwnerData } from "@/stores/owner/api";
 import type { Order } from "@/app/owner/types";
 import { Avatar, Card, ErrorState, Skeleton, rwf, toNumber } from "@/app/owner/components/ui";
-import { orderNumber } from "@/app/owner/finance/money";
+import { orderNumber, placeText } from "@/app/owner/finance/money";
 import { PAYMENT_LABELS } from "@/app/owner/sales";
 
 interface Check {
@@ -97,11 +97,21 @@ export default function OrderPage() {
         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-ink/45">Orders</p>
         <h1 className="mt-1 text-2xl font-extrabold tracking-[-0.02em] text-ink md:text-[28px]">Order {orderNumber(order)}</h1>
         <p className="mt-1 text-sm text-ink/60">{dateTime(order.createdAt)}</p>
+        {order.tableName && (
+          <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-lime px-3 py-1 text-sm font-bold text-ink">
+            <Armchair className="h-4 w-4" />
+            {placeText(order)}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-8 gap-y-4 rounded-2xl border border-ink/10 bg-white p-5">
         <span className={`rounded-full px-3 py-1 text-xs font-bold ${status.cls}`}>{status.label}</span>
+        <Fact icon={order.tableName ? Armchair : order.type === "DELIVERY" ? Bike : Store} label="Served at" value={placeText(order)} />
         <Fact icon={User} label="Served by" value={servedBy?.employee?.name ?? servedBy?.name ?? "Unknown"} />
+        {order.tableName && order.status === "COMPLETED" && order.collectedBy && (
+          <Fact icon={ShieldCheck} label="Payment verified by" value={order.collectedBy.employee?.name ?? order.collectedBy.name ?? "—"} />
+        )}
         {order.status === "COMPLETED" && (
           <Fact
             icon={check?.status === "FLAGGED" ? Flag : ShieldCheck}

@@ -172,3 +172,12 @@ export function downloadCsv(fileName: string, rows: (string | number | null | un
 
 // "#A1B2C3": the short number the till prints.
 export const orderNumber = (o: Pick<Order, "id">) => `#${o.id.replace(/-/g, "").slice(-6).toUpperCase()}`;
+
+// Where an order was served: "Table T04 · Restaurant", "Bar stool S03",
+// "Delivery · Kicukiro" or "In store" (counter sales and orders from before tables were saved).
+export const placeText = (o: Pick<Order, "tableName" | "tableKind" | "tableArea" | "type" | "deliveryArea">) =>
+  o.tableName
+    ? `${o.tableKind || "Table"} ${o.tableName}${o.tableArea ? ` · ${o.tableArea}` : ""}`
+    : o.type === "DELIVERY"
+      ? `Delivery${o.deliveryArea ? ` · ${o.deliveryArea}` : ""}`
+      : "In store";

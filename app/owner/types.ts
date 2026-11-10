@@ -44,6 +44,11 @@ export interface Order {
   type?: "IN_STORE" | "DELIVERY";
   customerName?: string | null;
   note?: string | null;
+  // The table or seat it was served at (floor map), e.g. "Bar stool" "S03" "Lounge".
+  tableId?: string | null;
+  tableName?: string | null;
+  tableKind?: string | null;
+  tableArea?: string | null;
   items?: OrderItem[];
   payments?: Payment[];
   user?: Person | null;

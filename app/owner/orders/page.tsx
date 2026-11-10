@@ -2,13 +2,13 @@
 
 import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bike, Download, Receipt, ShieldCheck, Store } from "lucide-react";
+import { Armchair, Bike, Download, Receipt, ShieldCheck, Store } from "lucide-react";
 import { ordersSince, useOwnerData } from "@/stores/owner/api";
 import type { Order } from "@/app/owner/types";
 import { Avatar, Badge, Card, EmptyState, ErrorState, PageHeader, SearchInput, Skeleton, Tabs, dayKey, formatDate, personName, rwf, toNumber } from "@/app/owner/components/ui";
 import { LinkButton } from "@/app/owner/components/forms";
 import { PAYMENT_LABELS, isPaid, sumOf } from "@/app/owner/sales";
-import { downloadCsv, orderNumber, paidAt } from "@/app/owner/finance/money";
+import { downloadCsv, orderNumber, paidAt, placeText } from "@/app/owner/finance/money";
 
 type Period = "today" | "week" | "month" | "all";
 type StatusFilter = "all" | "paid" | "open" | "cancelled";
@@ -111,7 +111,7 @@ export default function OwnerOrders() {
       matchesStatus(o, status) &&
       (check === "all" || checkOf(o).check === check) &&
       (!query ||
-        [orderNumber(o), o.customerName, personName(o.user), ...(o.items ?? []).map((i) => i.product?.name)].filter(Boolean).some((v) => String(v).toLowerCase().includes(query))),
+        [orderNumber(o), placeText(o), o.customerName, personName(o.user), ...(o.items ?? []).map((i) => i.product?.name)].filter(Boolean).some((v) => String(v).toLowerCase().includes(query))),
   );
   const count = (s: StatusFilter) => byWorker.filter((o) => matchesStatus(o, s)).length;
   const paid = byWorker.filter(isPaid);
@@ -120,11 +120,11 @@ export default function OwnerOrders() {
 
   const exportCsv = () =>
     downloadCsv(`orders-${new Date().toISOString().slice(0, 10)}.csv`, [
-      ["Date", "Order", "Type", "Customer", "Staff", "Items", "Payment", "Total", "Status", "Money check"],
+      ["Date", "Order", "Served at", "Customer", "Staff", "Items", "Payment", "Total", "Status", "Money check"],
       ...visible.map((o) => [
         new Date(o.createdAt).toLocaleString("en-GB"),
         orderNumber(o),
-        o.type === "DELIVERY" ? "Delivery" : "In store",
+        placeText(o),
         o.customerName ?? "",
         personName(o.user),
         (o.items ?? []).map((i) => `${i.quantity} x ${i.product?.name ?? ""}`).join("; "),
@@ -259,10 +259,11 @@ export default function OwnerOrders() {
           <EmptyState icon={Receipt} title="No orders here" text="Try another worker or filter." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-sm">
+            <table className="w-full min-w-[1040px] text-sm">
               <thead>
                 <tr className="border-b border-ink/8 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-ink/45">
                   <th className="px-5 py-3">Order</th>
+                  <th className="px-5 py-3">Served at</th>
                   <th className="px-5 py-3">Staff</th>
                   <th className="px-5 py-3">Items</th>
                   <th className="px-5 py-3">Payment</th>
@@ -281,7 +282,7 @@ export default function OwnerOrders() {
                     <Fragment key={order.id}>
                       {newDay && (
                         <tr className="bg-ivory/70">
-                          <td colSpan={7} className="px-5 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-ink/50">
+                          <td colSpan={8} className="px-5 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-ink/50">
                             {dayLabel(order.createdAt)} · {visible.filter((o) => dayKey(new Date(o.createdAt)) === dayKey(new Date(order.createdAt))).length}
                           </td>
                         </tr>
@@ -289,14 +290,26 @@ export default function OwnerOrders() {
                       <tr onClick={() => router.push(`/owner/orders/${order.id}`)} className="cursor-pointer border-t border-ink/6 transition-colors hover:bg-ivory/70">
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-3">
-                            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ivory text-ink/60">
-                              {order.type === "DELIVERY" ? <Bike className="h-4 w-4" /> : <Store className="h-4 w-4" />}
+                            <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${order.tableName ? "bg-lime text-ink" : "bg-ivory text-ink/60"}`}>
+                              {order.tableName ? <Armchair className="h-4 w-4" /> : order.type === "DELIVERY" ? <Bike className="h-4 w-4" /> : <Store className="h-4 w-4" />}
                             </span>
                             <div>
                               <p className="font-semibold text-ink">{orderNumber(order)}</p>
                               <p className="text-xs text-ink/50">{new Date(order.createdAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</p>
                             </div>
                           </div>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          {order.tableName ? (
+                            <>
+                              <p className="font-semibold text-ink">
+                                {order.tableKind || "Table"} {order.tableName}
+                              </p>
+                              {order.tableArea && <p className="text-xs text-ink/50">{order.tableArea}</p>}
+                            </>
+                          ) : (
+                            <p className="text-ink/60">{placeText(order)}</p>
+                          )}
                         </td>
                         <td className="px-5 py-3.5 text-ink/80">{personName(order.user)}</td>
                         <td className="max-w-56 truncate px-5 py-3.5 text-ink/70">{items.length ? items.map((it) => `${it.quantity}× ${it.product?.name ?? ""}`).join(", ") : "—"}</td>
