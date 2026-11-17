@@ -20,6 +20,7 @@ import toast from "react-hot-toast";
 import Logo from "@/app/components/Logo";
 import { homeForRole } from "@/app/components/RoleGate";
 import DeviceAccess from "@/app/pages/Login/DeviceAccess";
+import { formatCountdown, useCountdown } from "@/app/components/SignInLock";
 import { browserDevice, checkBrowserDevice, type BrowserDeviceStatus } from "@/stores/device/browserDevice";
 
 export default function LoginPage() {
@@ -32,9 +33,16 @@ export default function LoginPage() {
   const login = useAuthStore((state) => state.login);
   // Set when an owner tried to sign in on a browser that isn't approved yet.
   const [deviceStatus, setDeviceStatus] = useState<BrowserDeviceStatus | null>(null);
+  // Too many wrong passwords on this browser: sign-in waits out the countdown.
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const [lockMessage, setLockMessage] = useState<string | null>(null);
+  const [attemptsLeft, setAttemptsLeft] = useState<number | null>(null);
+  const lockRemaining = useCountdown(lockedUntil);
+  const locked = lockRemaining > 0;
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (locked) return;
     setLoading(true);
     const { deviceId } = browserDevice();
 
@@ -48,6 +56,14 @@ export default function LoginPage() {
       else router.push(home);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login failed";
+      const info = error as { status?: number; attemptsLeft?: number; retryAfter?: number };
+      setAttemptsLeft(info.attemptsLeft ?? null);
+      if (info.status === 423 || info.status === 429) {
+        setLockedUntil(Date.now() + (info.retryAfter ?? 60) * 1000);
+        setLockMessage(message);
+        setAttemptsLeft(null);
+        return;
+      }
       // Right password, but this browser isn't an approved device of the company.
       if (message === "Device not found") {
         setDeviceStatus(await checkBrowserDevice(deviceId).catch(() => "UNKNOWN" as const));
@@ -139,6 +155,16 @@ export default function LoginPage() {
 
             {deviceStatus && <DeviceAccess status={deviceStatus} onStatus={setDeviceStatus} />}
 
+            {locked && (
+              <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-5 text-center" role="alert">
+                <p className="text-sm font-bold text-red-800">This device is locked</p>
+                {lockMessage && <p className="mt-1 text-xs text-red-700">{lockMessage}</p>}
+                <p className="mt-3 text-4xl font-bold tabular-nums text-ink">{formatCountdown(lockRemaining)}</p>
+                <p className="mt-1 text-xs text-ink/60">until you can try again</p>
+                <p className="mt-4 text-xs text-ink/70">Need help? Contact your account owner to unlock this device.</p>
+              </div>
+            )}
+
             <form className="space-y-5" onSubmit={handleLogin}>
               <div>
                 <label
@@ -223,9 +249,15 @@ export default function LoginPage() {
                 Keep me signed in
               </label>
 
+              {!locked && attemptsLeft !== null && attemptsLeft > 0 && (
+                <p className="text-center text-xs font-medium text-red-700">
+                  {attemptsLeft === 1 ? "1 try left" : `${attemptsLeft} tries left`} before this device locks
+                </p>
+              )}
+
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || locked}
                 className="group flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-ink text-sm font-bold text-white shadow-lg shadow-ink/20 transition hover:bg-ink-soft hover:shadow-xl active:scale-[0.99] disabled:opacity-60"
               >
                 {loading ? "Signing in..." : "Sign in"}

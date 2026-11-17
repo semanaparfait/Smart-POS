@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import useDeviceStore, { type RegistrationAction } from "@/stores/device/devicestore";
+import { LockedTag } from "@/app/components/SignInLock";
 import { RegistrationStatusEnum, type DeviceType } from "@/stores/device/devicetypes";
 import FetchDevices, {
   CompanyBadge,
@@ -215,6 +216,7 @@ export default function DevicesPage() {
                       <span className="block truncate text-sm font-semibold text-ink group-hover:underline">
                         {device.deviceName || "Unnamed device"}
                       </span>
+                      <LockedTag lockedUntil={device.lockedUntil} />
                       <span className="block truncate text-xs text-ink/60">
                         {device.deviceOs || "Unknown OS"} · requested {formatDate(device.createdAt, true)}
                       </span>

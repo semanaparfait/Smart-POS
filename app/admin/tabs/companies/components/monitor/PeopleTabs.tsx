@@ -138,6 +138,7 @@ function DeviceLog({ deviceId }: { deviceId: string }) {
               <li key={a.id} className="flex flex-wrap justify-between gap-2">
                 <span>
                   {stamp(a.createdAt)} · {a.user?.name ?? "—"} · {title(a.action)}
+                  {a.message ? <span className={a.statusCode !== null && a.statusCode >= 400 ? "text-rose-600" : "text-ink/55"}> · {a.message}</span> : null}
                   {a.path ? <span className="font-mono text-ink/45"> {a.method} {a.path}</span> : null}
                 </span>
                 {a.statusCode !== null && <span className={`font-mono ${a.statusCode >= 400 ? "text-rose-600" : "text-emerald-700"}`}>{a.statusCode}</span>}

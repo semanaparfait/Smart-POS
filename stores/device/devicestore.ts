@@ -52,6 +52,8 @@ const useDeviceStore = create<{
   enableDevice: (id: string) => Promise<DeviceByIdResponse | null>;
   disableDevice: (id: string) => Promise<DeviceByIdResponse | null>;
   deleteDevice: (id: string) => Promise<DeviceByIdResponse | null>;
+  // Ends a sign-in lock now (after too many wrong PINs or passwords).
+  unlockDevice: (id: string) => Promise<DeviceByIdResponse | null>;
 }>((set) => ({
   devices: [],
 
@@ -67,6 +69,8 @@ const useDeviceStore = create<{
   enableDevice: (id) => request<DeviceByIdResponse>(`/${id}/enable`, "PATCH"),
 
   disableDevice: (id) => request<DeviceByIdResponse>(`/${id}/disable`, "PATCH"),
+
+  unlockDevice: (id) => request<DeviceByIdResponse>(`/${id}/unlock`, "PATCH"),
 
   deleteDevice: async (id) => {
     const result = await request<DeviceByIdResponse>(`/${id}/delete`, "DELETE");

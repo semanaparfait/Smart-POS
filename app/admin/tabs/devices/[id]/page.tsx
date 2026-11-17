@@ -30,6 +30,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import useDeviceStore from "@/stores/device/devicestore";
+import { SignInLockCard } from "@/app/components/SignInLock";
 import { RegistrationStatusEnum, type DeviceByIdResponse } from "@/stores/device/devicetypes";
 import {
   CompanyBadge,
@@ -272,6 +273,17 @@ export default function DeviceDetailPage() {
   return (
     <div className="space-y-6 pb-10">
       {backLink}
+
+      <SignInLockCard
+        deviceName={name}
+        lockedUntil={device.lockedUntil}
+        failedSignIns={device.failedSignIns}
+        onUnlock={async () => {
+          await useDeviceStore.getState().unlockDevice(device.id);
+          const fresh = await fetchDeviceById(device.id);
+          if (fresh) setDevice(fresh);
+        }}
+      />
 
       {/* Header */}
       <section className="rounded-2xl border border-ink/12 bg-white p-6 shadow-xs">

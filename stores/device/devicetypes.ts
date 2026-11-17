@@ -15,6 +15,9 @@ export interface DeviceType   {
    deviceName:string,
    deviceOs:string,
    registrationStatus:RegistrationStatusEnum,
+   // Sign-in lock after too many wrong PINs/passwords (missing on older servers).
+   lockedUntil?: string | null,
+   failedSignIns?: number,
    company: {
      id:string,
      createdAt:string,
@@ -37,6 +40,8 @@ export interface DeviceType   {
  deviceName:string,
  deviceOs:string,
  registrationStatus:RegistrationStatusEnum,
+ lockedUntil?: string | null,
+ failedSignIns?: number,
  company: {
    id:string,
    createdAt:string,

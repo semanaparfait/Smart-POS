@@ -8,6 +8,7 @@ import { Check, Clock, Folder, PackagePlus, TrendingDown, TrendingUp } from "luc
 import { ownerRequest } from "@/stores/owner/api";
 import type { Category, Product, RecipeLine } from "@/app/owner/types";
 import { toNumber } from "@/app/owner/components/ui";
+import { useBarcodeOn } from "@/app/owner/barcode";
 import { BackButton, Button, Field, FormPage, FormSection, MoneyInput, PhotoPicker, Switch, TextArea, TextInput } from "@/app/owner/components/forms";
 import { RecipeEditor, type RecipeRow } from "@/app/owner/inventory/StockParts";
 import { CUSTOM_UNITS, PRODUCTS, UNIT_GROUPS, historyOf, quantityOnly, unitGroupOf, whoLine } from "@/app/owner/inventory/stock";
@@ -88,7 +89,8 @@ export function ProductForm({ product, categories, products }: { product: Produc
   const profit = sell - buy;
   const marginPct = sell > 0 ? Math.round((profit / sell) * 100) : 0;
   // For products with no barcode; one that already has a code keeps showing it.
-  const showSku = !barCode.trim() || !!product?.sku;
+  const barcodeOn = useBarcodeOn();
+  const showSku = !barcodeOn || !barCode.trim() || !!product?.sku;
   const currentPhoto = product?.images?.[0]?.thumbnailUrl ?? product?.images?.[0]?.url ?? null;
 
   const save = async () => {
@@ -344,9 +346,11 @@ export function ProductForm({ product, categories, products }: { product: Produc
       )}
 
       <FormSection title="Details" description="Optional">
-        <Field label="Barcode / QR code" hint="Type it, or scan it with a barcode reader into this box.">
-          <TextInput value={barCode} onChange={(e) => setBarCode(e.target.value)} placeholder="Scan or enter code" />
-        </Field>
+        {barcodeOn && (
+          <Field label="Barcode / QR code" hint="Type it, or scan it with a barcode reader into this box.">
+            <TextInput value={barCode} onChange={(e) => setBarCode(e.target.value)} placeholder="Scan or enter code" />
+          </Field>
+        )}
         {showSku && (
           <Field label="SKU / product code">
             <TextInput value={sku} onChange={(e) => setSku(e.target.value)} placeholder="For products without a barcode" />

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-import { BedDouble, Bike, ChefHat, LayoutGrid, Loader2, type LucideIcon } from "lucide-react";
+import { BedDouble, Bike, ChefHat, LayoutGrid, Loader2, ScanBarcode, type LucideIcon } from "lucide-react";
 import useCompanyStore from "@/stores/companies/companystore";
 import type { CompanyFeatures as Features, FeatureKey } from "@/stores/companies/companyTypes";
 
@@ -31,6 +31,12 @@ const EXTRAS: { key: FeatureKey; label: string; description: string; icon: Lucid
     description: "Kitchen display and kitchen staff, for orders that are prepared.",
     icon: ChefHat,
   },
+  {
+    key: "barcode",
+    label: "Barcode scanning",
+    description: "Scanning products at the till and barcodes on products. On by default for supermarkets.",
+    icon: ScanBarcode,
+  },
 ];
 
 // What this company may use beyond selling. Saved per switch; the owner's app
@@ -46,7 +52,7 @@ export default function CompanyFeatures({
   // A server from before extras existed sends none: everything is on there.
   const known = !!initial;
   const [features, setLocal] = useState<Partial<Features>>(
-    initial ?? { services: true, delivery: true, floorMap: true, kitchen: true },
+    initial ?? { services: true, delivery: true, floorMap: true, kitchen: true, barcode: true },
   );
   const [saving, setSaving] = useState<FeatureKey | null>(null);
 

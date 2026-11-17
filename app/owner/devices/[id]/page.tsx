@@ -10,6 +10,7 @@ import type { Device, DeviceActivity, DeviceKind } from "@/app/owner/types";
 import { Card, ErrorState, Skeleton, formatDate, timeAgo } from "@/app/owner/components/ui";
 import { Button, TextInput } from "@/app/owner/components/forms";
 import { DEVICES, KINDS, STATE_META, deviceState, kindOf } from "@/app/owner/devices/kinds";
+import { SignInLockCard } from "@/app/components/SignInLock";
 
 const PAGE_SIZE = 20;
 const dateTime = (v?: string | null) => (v ? new Date(v).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
@@ -150,6 +151,16 @@ function DeviceView({ device, devices, onChanged }: { device: Device; devices: D
         </div>
       </div>
 
+      <SignInLockCard
+        deviceName={device.deviceName}
+        lockedUntil={device.lockedUntil}
+        failedSignIns={device.failedSignIns}
+        onUnlock={async () => {
+          await ownerRequest(`/devices/${device.id}/unlock`, { method: "PATCH" });
+          onChanged();
+        }}
+      />
+
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
           { icon: Wifi, label: "Last seen", value: device.online ? "Online now" : timeAgo(device.lastSeenAt), hint: dateTime(device.lastSeenAt) },
@@ -241,13 +252,14 @@ function DeviceView({ device, devices, onChanged }: { device: Device; devices: D
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-ink">{actionLabel(l.action)}</p>
                           <p className="truncate text-xs text-ink/55">
-                            {l.user?.name ?? "—"} · {dateTime(l.createdAt)}
-                            {l.method && l.path ? ` · ${l.method} ${l.path}` : ""}
+                            {l.user?.name ? `${l.user.name} · ` : ""}
+                            {dateTime(l.createdAt)}
                           </p>
+                          {/* The server's own words; endpoints are only shown to the super admin. */}
+                          {(l.message || bad) && (
+                            <p className={`mt-0.5 text-xs ${bad ? "text-rose-700" : "text-ink/60"}`}>{l.message ?? "Didn't go through"}</p>
+                          )}
                         </div>
-                        {l.statusCode !== null && (
-                          <span className={`rounded-lg px-2 py-0.5 font-mono text-[11px] font-bold ${bad ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"}`}>{l.statusCode}</span>
-                        )}
                       </li>
                     );
                   })}

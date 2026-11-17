@@ -8,6 +8,7 @@ import type { Order } from "@/app/owner/types";
 import { Avatar, Card, ErrorState, Skeleton, rwf, toNumber } from "@/app/owner/components/ui";
 import { orderNumber, placeText } from "@/app/owner/finance/money";
 import { PAYMENT_LABELS } from "@/app/owner/sales";
+import { useBarcodeOn } from "@/app/owner/barcode";
 
 interface Check {
   date: string;
@@ -55,6 +56,7 @@ function Fact({ icon: Icon, label, value }: { icon: React.ComponentType<{ classN
 // One order: what was bought, how it was paid, who served it and its history.
 export default function OrderPage() {
   const { id } = useParams<{ id: string }>();
+  const barcodeOn = useBarcodeOn();
   const { data: order, loading, error, reload } = useOwnerData<Order>(`/orders/${id}`);
   const checks = useOwnerData<Check[]>("/money-checks");
 
@@ -142,7 +144,7 @@ export default function OrderPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-ink">{item.product?.name?.trim() || "Item"}</p>
-                    {item.product?.barCode && <p className="font-mono text-[11px] text-ink/45">{item.product.barCode}</p>}
+                    {barcodeOn && item.product?.barCode && <p className="font-mono text-[11px] text-ink/45">{item.product.barCode}</p>}
                     {item.note && <p className="text-xs text-ink/55">{item.note}</p>}
                   </div>
                   <span className="text-xs text-ink/55">

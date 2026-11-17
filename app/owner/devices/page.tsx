@@ -9,6 +9,7 @@ import type { Device, DeviceKind } from "@/app/owner/types";
 import { Badge, Card, EmptyState, ErrorState, PageHeader, SearchInput, Skeleton, formatDate, timeAgo } from "@/app/owner/components/ui";
 import { Button, LinkButton } from "@/app/owner/components/forms";
 import { DEVICES, KINDS, STATE_META, deviceState, type DeviceState } from "@/app/owner/devices/kinds";
+import { LockedTag } from "@/app/components/SignInLock";
 
 const isWaiting = (d: Device) => d.registrationStatus === "PENDING" || d.registrationStatus === "REQUESTED";
 const isApproved = (d: Device) => d.registrationStatus === "REGISTERED";
@@ -110,9 +111,12 @@ function DeviceCard({ device, onChanged }: { device: Device; onChanged: () => vo
           <Icon className="h-5 w-5" />
         </span>
         {approved ? (
-          <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${device.online ? "text-emerald-600" : "text-ink/45"}`}>
-            <span className={`h-2 w-2 rounded-full ${device.online ? "bg-emerald-500" : "bg-ink/25"}`} />
-            {device.online ? "Online" : `Seen ${timeAgo(device.lastSeenAt).toLowerCase()}`}
+          <span className="flex flex-col items-end gap-1.5">
+            <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${device.online ? "text-emerald-600" : "text-ink/45"}`}>
+              <span className={`h-2 w-2 rounded-full ${device.online ? "bg-emerald-500" : "bg-ink/25"}`} />
+              {device.online ? "Online" : `Seen ${timeAgo(device.lastSeenAt).toLowerCase()}`}
+            </span>
+            <LockedTag lockedUntil={device.lockedUntil} />
           </span>
         ) : (
           <Badge tone="danger">{device.registrationStatus === "DISABLED" ? "Disabled" : "Turned away"}</Badge>

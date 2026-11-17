@@ -81,8 +81,16 @@ const useAuthStore = create<AuthState>((set, get) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...loginData, client: "web" }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error((Array.isArray(data.message) ? data.message.join(". ") : data.message) || "Login failed");
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        const message = Array.isArray(data?.message) ? data.message.join(". ") : data?.message;
+        // Wrong tries count toward this browser's sign-in lock (5, then locked for a while).
+        throw Object.assign(new Error(message || "Login failed"), {
+          status: response.status,
+          attemptsLeft: typeof data?.attemptsLeft === "number" ? data.attemptsLeft : undefined,
+          retryAfter: typeof data?.retryAfter === "number" ? data.retryAfter : undefined,
+        });
+      }
 
       const payload = unwrap(data);
       const accessToken = payload.accessToken ?? payload.access_token ?? payload.token;

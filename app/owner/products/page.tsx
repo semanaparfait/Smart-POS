@@ -9,6 +9,7 @@ import { Button, LinkButton } from "@/app/owner/components/forms";
 import type { Category, Product } from "@/app/owner/types";
 import { Card, EmptyState, ErrorState, PageHeader, SearchInput, Skeleton, StatCard, formatDate, toNumber } from "@/app/owner/components/ui";
 import { PRODUCTS } from "@/app/owner/inventory/stock";
+import { useBarcodeOn } from "@/app/owner/barcode";
 
 // One tap: on or off the till, or in or out of the kitchen. Products are never
 // deleted, since past sales and receipts still point to them.
@@ -68,6 +69,7 @@ function RowActions({ product, onChanged }: { product: Product; onChanged: () =>
 
 export default function OwnerProducts() {
   const { data, loading, error, reload } = useOwnerData<Product[]>("/products");
+  const barcodeOn = useBarcodeOn();
   const categoryList = useOwnerData<Category[]>("/categories");
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
@@ -127,7 +129,7 @@ export default function OwnerProducts() {
       <Card>
         <div className="space-y-3 border-b border-ink/6 p-4">
           <div className="flex items-center justify-between gap-3">
-            <SearchInput value={search} onChange={setSearch} placeholder="Search by name or barcode" />
+            <SearchInput value={search} onChange={setSearch} placeholder={barcodeOn ? "Search by name or barcode" : "Search products"} />
             <span className="rounded-full bg-ivory px-2.5 py-1 text-xs font-semibold text-ink/60">{visible.length}</span>
           </div>
           {categories.length > 0 && (
@@ -198,7 +200,7 @@ export default function OwnerProducts() {
                           </span>
                           <span className="min-w-0">
                             <span className="block truncate font-semibold text-ink">{p.name}</span>
-                            <span className="block truncate font-mono text-[11px] text-ink/45">{p.barCode || "No barcode"}</span>
+                            <span className="block truncate font-mono text-[11px] text-ink/45">{barcodeOn ? p.barCode || "No barcode" : p.sku || ""}</span>
                           </span>
                         </Link>
                       </td>

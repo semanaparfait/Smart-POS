@@ -210,6 +210,9 @@ export interface Device {
   displayFor?: { id: string; deviceName: string } | null;
   // MoMo Pay code customers pay to at this device.
   momoCode?: string | null;
+  // Sign-in lock after too many wrong PINs/passwords (missing on older servers).
+  lockedUntil?: string | null;
+  failedSignIns?: number;
   lastLoginAt?: string | null;
   lastActivity?: string | null;
   lastActivityAt?: string | null;
@@ -224,4 +227,6 @@ export interface DeviceActivity {
   method: string | null;
   path: string | null;
   statusCode: number | null;
+  // What the server said, e.g. "Wrong PIN". The server leaves out method/path except for the super admin.
+  message?: string | null;
 }

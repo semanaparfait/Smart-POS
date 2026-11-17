@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { RegistrationStatusEnum, type DeviceType } from "@/stores/device/devicetypes";
+import { LockedTag } from "@/app/components/SignInLock";
 
 /* ---------- Shared helpers (also used by the device detail page) ---------- */
 
@@ -131,6 +132,7 @@ function DeviceGrid({ devices }: { devices: DeviceType[] }) {
                 {device.deviceName || "Unnamed device"}
               </h3>
               <p className="mt-1 truncate font-mono text-[11px] text-ink/45">{device.deviceId}</p>
+              <div className="mt-1.5"><LockedTag lockedUntil={device.lockedUntil} /></div>
 
               <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-ivory p-3 ring-1 ring-inset ring-ink/6">
                 <CompanyBadge name={device.company?.name} logo={device.company?.logo} />
@@ -194,6 +196,7 @@ function DeviceTable({ devices }: { devices: DeviceType[] }) {
                           {device.deviceName || "Unnamed device"}
                         </span>
                         <span className="block max-w-56 truncate font-mono text-[11px] text-ink/45">{device.deviceId}</span>
+                        <LockedTag lockedUntil={device.lockedUntil} />
                       </span>
                     </Link>
                   </td>
