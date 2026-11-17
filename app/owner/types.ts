@@ -216,7 +216,7 @@ export interface Device {
   lastLoginAt?: string | null;
   lastActivity?: string | null;
   lastActivityAt?: string | null;
-  company?: { name?: string; code?: string; type?: string; location?: string; phone_number?: string } | null;
+  company?: { id?: string; name?: string; code?: string; type?: string; location?: string; phone_number?: string } | null;
 }
 
 export interface DeviceActivity {

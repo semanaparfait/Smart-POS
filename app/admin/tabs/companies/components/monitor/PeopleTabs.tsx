@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useOwnerData } from "@/stores/owner/api";
-import type { DeviceActivity, Employee, Order } from "@/app/owner/types";
-import { Avatar, Badge, SearchInput, formatDate, rwf, timeAgo, toNumber } from "@/app/owner/components/ui";
+import type { Device, Employee, Order } from "@/app/owner/types";
+import DevicesBoard from "@/app/owner/devices/DevicesBoard";
+import { Avatar, Badge, ErrorState, SearchInput, formatDate, rwf, timeAgo, toNumber } from "@/app/owner/components/ui";
 import { permissionLabel } from "@/app/owner/permissions";
-import { DEVICE_KIND, Empty, Loading, Panel, SmallButton, stamp, title, useAction, type CompanyDetails } from "./parts";
+import { Empty, Loading, Panel, SmallButton, title, useAction, type CompanyDetails } from "./parts";
 
 // ---------- Workers ----------
 
@@ -125,93 +126,18 @@ export function WorkersTab({ companyId, details, orders, onChanged }: { companyI
 
 // ---------- Devices ----------
 
-type Dev = CompanyDetails["devices"][number];
-
-function DeviceLog({ deviceId }: { deviceId: string }) {
-  const log = useOwnerData<DeviceActivity[]>(`/devices/${deviceId}/activities?limit=50`);
+// The same board the owner sees on /owner/devices; each card opens the full
+// device page, where the super admin can do everything the owner can.
+export function DevicesTab({ companyId, onChanged }: { companyId: string; onChanged: () => void }) {
+  const devices = useOwnerData<Device[]>(`/devices?companyId=${encodeURIComponent(companyId)}`);
+  if (devices.error && !devices.data) return <ErrorState message={devices.error} onRetry={devices.reload} />;
   return (
-    <div className="border-t border-ink/6 bg-ivory/40 px-4 py-3">
-      <Loading {...log}>
-        {(rows) => (
-          <ul className="max-h-72 space-y-1 overflow-y-auto text-xs text-ink/75">
-            {rows.map((a) => (
-              <li key={a.id} className="flex flex-wrap justify-between gap-2">
-                <span>
-                  {stamp(a.createdAt)} · {a.user?.name ?? "—"} · {title(a.action)}
-                  {a.message ? <span className={a.statusCode !== null && a.statusCode >= 400 ? "text-rose-600" : "text-ink/55"}> · {a.message}</span> : null}
-                  {a.path ? <span className="font-mono text-ink/45"> {a.method} {a.path}</span> : null}
-                </span>
-                {a.statusCode !== null && <span className={`font-mono ${a.statusCode >= 400 ? "text-rose-600" : "text-emerald-700"}`}>{a.statusCode}</span>}
-              </li>
-            ))}
-            {!rows.length && <li>Nothing done on this device yet.</li>}
-          </ul>
-        )}
-      </Loading>
-    </div>
-  );
-}
-
-function DeviceRow({ device, onChanged }: { device: Dev; onChanged: () => void }) {
-  const [open, setOpen] = useState(false);
-  const { busy, run } = useAction(onChanged);
-  const s = device.registrationStatus;
-  const waiting = s === "PENDING" || s === "REQUESTED";
-  const tone = s === "REGISTERED" ? "success" : waiting ? "lime" : "danger";
-  const patch = (key: string, path: string, body: object | null, done: string) => run(key, `/devices/${device.id}/${path}`, { method: "PATCH", ...(body ? { body: JSON.stringify(body) } : {}) }, done);
-  return (
-    <li>
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-        <span className={`h-2.5 w-2.5 rounded-full ${device.online ? "bg-emerald-500" : "bg-ink/20"}`} />
-        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="min-w-0 flex-1 text-left">
-          <p className="truncate text-sm font-bold text-ink">
-            {device.deviceName} <ChevronDown className={`inline h-3.5 w-3.5 text-ink/35 transition-transform ${open ? "rotate-180" : ""}`} />
-          </p>
-          <p className="truncate text-xs text-ink/55">
-            {DEVICE_KIND[device.type ?? "POS_TERMINAL"] ?? title(device.type)} · {device.deviceOs} · {device.online ? "Online now" : `Seen ${timeAgo(device.lastSeenAt).toLowerCase()}`}
-            {device.momoCode ? ` · MoMo ${device.momoCode}` : ""}
-          </p>
-        </button>
-        <span className="text-xs text-ink/60">{device.currentUser?.name ?? "Nobody signed in"}</span>
-        <Badge tone={tone}>{title(s)}</Badge>
-        {waiting ? (
-          <>
-            <SmallButton tone="ink" disabled={busy !== null} onClick={() => patch("ok", "registration", { action: "APPROVE", type: device.type ?? "POS_TERMINAL" }, `${device.deviceName} approved`)}>
-              Approve
-            </SmallButton>
-            <SmallButton tone="danger" disabled={busy !== null} onClick={() => patch("no", "registration", { action: "REJECT" }, `${device.deviceName} turned away`)}>
-              Turn away
-            </SmallButton>
-          </>
-        ) : s === "REGISTERED" ? (
-          <SmallButton tone="danger" disabled={busy !== null} onClick={() => patch("off", "disable", null, `${device.deviceName} turned off`)}>
-            Turn off
-          </SmallButton>
-        ) : s === "DISABLED" ? (
-          <SmallButton tone="ink" disabled={busy !== null} onClick={() => patch("on", "enable", null, `${device.deviceName} turned on`)}>
-            Turn on
-          </SmallButton>
-        ) : null}
-      </div>
-      {open && <DeviceLog deviceId={device.id} />}
-    </li>
-  );
-}
-
-export function DevicesTab({ details, onChanged }: { details: CompanyDetails; onChanged: () => void }) {
-  const [search, setSearch] = useState("");
-  const q = search.trim().toLowerCase();
-  const list = details.devices.filter((d) => !q || [d.deviceName, d.deviceOs, d.currentUser?.name].some((v) => v?.toLowerCase().includes(q)));
-  return (
-    <div className="space-y-3">
-      <SearchInput value={search} onChange={setSearch} placeholder="Search devices" />
-      <p className="text-xs text-ink/55">Open a device to see everything done on it.</p>
-      <Panel heading={`Devices · ${details.devices.length}`}>
-        {list.map((d) => (
-          <DeviceRow key={d.id} device={d} onChanged={onChanged} />
-        ))}
-        {!list.length && <Empty text="No devices." />}
-      </Panel>
-    </div>
+    <DevicesBoard
+      devices={devices.data}
+      loading={devices.loading}
+      reload={() => (devices.reload(), onChanged())}
+      base={`/admin/tabs/companies/${companyId}/devices`}
+      waitingText="New devices can't be used until they are approved."
+    />
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import useCompaniesStore from "@/stores/companies/companystore";
@@ -283,7 +283,9 @@ export default function CompanyDetailPage() {
         </div>
       </section>
 
-      <CompanyMonitor companyId={company.id} />
+      <Suspense>
+        <CompanyMonitor companyId={company.id} />
+      </Suspense>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

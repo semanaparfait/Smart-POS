@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AlertTriangle, Banknote, MonitorSmartphone, Package, Receipt, RotateCw, Scale, Trophy, Users, Wallet } from "lucide-react";
 import { ordersSince, useOwnerData } from "@/stores/owner/api";
 import type { Order, Product } from "@/app/owner/types";
@@ -15,7 +16,8 @@ import { ProductsTab, StockTab } from "./monitor/StockTabs";
 import MoneyTab, { type MoneyCheck } from "./monitor/MoneyTab";
 import { ActivityTab, DeliveriesTab, ServicesTab, SettingsTab } from "./monitor/MoreTabs";
 
-type Tab = "overview" | "orders" | "deliveries" | "services" | "workers" | "devices" | "products" | "stock" | "money" | "activity" | "settings";
+const TABS = ["overview", "orders", "deliveries", "services", "workers", "devices", "products", "stock", "money", "activity", "settings"] as const;
+type Tab = (typeof TABS)[number];
 
 // Everything in one company, for the super admin: what its owner sees in the
 // app and on the website, plus turning workers and devices on or off.
@@ -29,7 +31,9 @@ export default function CompanyMonitor({ companyId }: { companyId: string }) {
   const staff = useOwnerData<Worker[]>(`/staff-debts?${q}`);
   const products = useOwnerData<Product[]>(`/products?${q}`);
   const lowStock = useOwnerData<Product[]>(`/products/low-stock?${q}`);
-  const [tab, setTab] = useState<Tab>("overview");
+  // ?tab=devices opens on that tab, e.g. coming back from a device page.
+  const asked = useSearchParams().get("tab") as Tab | null;
+  const [tab, setTab] = useState<Tab>(asked && TABS.includes(asked) ? asked : "overview");
   // Tabs that load their own lists start again on Refresh.
   const [round, setRound] = useState(0);
   const [now] = useState(() => Date.now());
@@ -181,7 +185,7 @@ export default function CompanyMonitor({ companyId }: { companyId: string }) {
         {tab === "deliveries" && d && <DeliveriesTab key={round} companyId={companyId} orders={all} details={d} />}
         {tab === "services" && <ServicesTab key={round} companyId={companyId} now={now} />}
         {tab === "workers" && (d ? <WorkersTab key={round} companyId={companyId} details={d} orders={all} onChanged={details.reload} /> : waiting)}
-        {tab === "devices" && (d ? <DevicesTab details={d} onChanged={details.reload} /> : waiting)}
+        {tab === "devices" && <DevicesTab key={round} companyId={companyId} onChanged={details.reload} />}
         {tab === "products" && ((products.loading && !products.data) || !d ? waiting : <ProductsTab products={products.data ?? []} details={d} />)}
         {tab === "stock" && <StockTab key={round} companyId={companyId} />}
         {tab === "money" &&
