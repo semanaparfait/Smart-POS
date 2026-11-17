@@ -45,7 +45,7 @@ export interface SignedInCompany {
   // The owner's own kitchen setting (Settings, Kitchen).
   kitchenEnabled?: boolean;
   // Extras SmartPOS turned on for the company.
-  features?: { services?: boolean; delivery?: boolean; floorMap?: boolean; kitchen?: boolean; barcode?: boolean } | null;
+  features?: { services?: boolean; delivery?: boolean; floorMap?: boolean; kitchen?: boolean; barcode?: boolean; deviceAccess?: boolean } | null;
 }
 
 export interface DeliveryArea {

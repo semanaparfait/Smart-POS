@@ -18,7 +18,7 @@ export interface CompanyDetails {
   deliveryAreas?: DeliveryArea[] | null;
   deliveryRiders?: boolean;
   kitchenEnabled?: boolean;
-  features?: { services?: boolean; delivery?: boolean; floorMap?: boolean; kitchen?: boolean } | null;
+  features?: { services?: boolean; delivery?: boolean; floorMap?: boolean; kitchen?: boolean; barcode?: boolean; deviceAccess?: boolean } | null;
   users: { id: string; name: string; email: string; phone?: string; role: string; active: boolean; lastLoginAt: string | null; employee?: { name: string } | null }[];
   devices: {
     id: string;

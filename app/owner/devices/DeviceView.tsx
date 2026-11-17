@@ -8,9 +8,9 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Activity, ArrowLeft, Calendar, Check, Copy, KeyRound, LogIn, Power, Trash2, Wifi, X } from "lucide-react";
+import { Activity, ArrowLeft, Calendar, Check, Copy, KeyRound, LogIn, Power, Trash2, UserCheck, Users, Wifi, X } from "lucide-react";
 import { ownerRequest, useOwnerData } from "@/stores/owner/api";
-import type { Device, DeviceActivity, DeviceKind } from "@/app/owner/types";
+import type { Device, DeviceActivity, DeviceKind, Employee } from "@/app/owner/types";
 import { Card, Skeleton, formatDate, timeAgo } from "@/app/owner/components/ui";
 import { Button, TextInput } from "@/app/owner/components/forms";
 import { KINDS, STATE_META, deviceState, kindOf } from "@/app/owner/devices/kinds";
@@ -58,12 +58,73 @@ function TypePicker({ value, onChange, disabled }: { value: DeviceKind; onChange
   );
 }
 
+// With the "Choose who uses each device" extra: the staff who may sign in here.
+// Nobody chosen = anyone on the staff. Owners always can. One click saves.
+function AccessCard({ device, staffPath, onChanged }: { device: Device; staffPath: string; onChanged: () => void }) {
+  const staff = useOwnerData<Employee[]>(staffPath);
+  const [saving, setSaving] = useState(false);
+  const chosen = device.allowedUserIds ?? [];
+  // Staff with a sign-in; turned-off accounts can't sign in anyway.
+  const people = (staff.data ?? []).filter((e) => e.user?.id && e.user.active !== false);
+
+  const save = async (next: string[], done: string) => {
+    setSaving(true);
+    try {
+      await ownerRequest(`/devices/${device.id}/allowed-users`, { method: "PATCH", body: JSON.stringify({ userIds: next }) });
+      toast.success(done);
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const chip = (key: string, label: string, on: boolean, onClick: () => void, Icon: typeof Users) => (
+    <button
+      key={key}
+      type="button"
+      role="checkbox"
+      aria-checked={on}
+      disabled={saving}
+      onClick={onClick}
+      className={`inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors disabled:opacity-60 ${on ? "bg-ink text-white" : "bg-white text-ink ring-1 ring-inset ring-ink/12 hover:bg-ivory"}`}
+    >
+      <Icon className={`h-3.5 w-3.5 ${on ? "text-lime" : "text-ink/55"}`} /> {label}
+    </button>
+  );
+
+  return (
+    <Card
+      title="Who can use it"
+      description={chosen.length ? "Only the people chosen can sign in here. The owner can always sign in." : "Anyone on the staff can sign in here. Choose people to keep everyone else off it."}
+    >
+      <div className="p-5">
+        {staff.loading && !staff.data ? (
+          <Skeleton className="h-9" />
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {chip("all", "Anyone on the staff", chosen.length === 0, () => chosen.length && save([], "Anyone on the staff can sign in here"), Users)}
+            {people.map((e) => {
+              const id = e.user!.id;
+              const on = chosen.includes(id);
+              return chip(id, e.name, on, () => save(on ? chosen.filter((x) => x !== id) : [...chosen, id], on ? `${e.name} can no longer sign in here` : `${e.name} can sign in here`), UserCheck);
+            })}
+          </div>
+        )}
+        {!staff.loading && people.length === 0 && <p className="mt-2 text-xs text-ink/45">No staff with a sign-in yet.</p>}
+      </div>
+    </Card>
+  );
+}
+
 export default function DeviceView({
   device,
   devices,
   onChanged,
   back,
   eyebrow = "Settings · Devices",
+  access,
 }: {
   device: Device;
   // The company's devices, to pair a customer display with one of its tills.
@@ -72,6 +133,8 @@ export default function DeviceView({
   // Where "back" and a deleted device lead.
   back: { href: string; label: string };
   eyebrow?: string;
+  // The company has the "Choose who uses each device" extra; `staffPath` lists its staff.
+  access?: { staffPath: string } | null;
 }) {
   const router = useRouter();
   const state = deviceState(device);
@@ -225,6 +288,8 @@ export default function DeviceView({
               )}
             </div>
           </Card>
+
+          {approved && access && <AccessCard device={device} staffPath={access.staffPath} onChanged={onChanged} />}
 
           {approved && (
             <Card title="MoMo code" description={isDisplay ? "Shown on this screen for customers to pay. Leave empty to use the paired till's code." : "Shown on this till's customer display for customers to pay."}>
